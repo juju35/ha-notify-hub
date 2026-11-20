@@ -84,7 +84,7 @@ def summary(recent):
 
 
 PANEL_STATE = {
-    "version": "0.1.0",
+    "version": "0.1.1",
     **summary(ALARM + RECENT),
     "people": [
         {
