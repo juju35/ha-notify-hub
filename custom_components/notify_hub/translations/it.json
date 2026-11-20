@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Un’unica azione per tutte le notifiche della casa: in base a presenza, ore di silenzio e priorità."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub è già configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Regole di Notify Hub",
+        "description": "Modificabili anche nel pannello Notify Hub (schede Regole e Impostazioni).",
+        "data": {
+          "quiet_enabled": "Ore di silenzio",
+          "quiet_start": "Inizio delle ore di silenzio",
+          "quiet_end": "Fine delle ore di silenzio",
+          "dedup_minutes": "Ignora i duplicati per",
+          "digest_times": "Orari del riepilogo",
+          "escalation_first": "Reinvia dopo",
+          "escalation_second": "Poi SMS dopo",
+          "sms_service": "Servizio SMS",
+          "away_mode": "Modalità assenza",
+          "retention_days": "Conserva il registro"
+        },
+        "data_description": {
+          "quiet_enabled": "Avvisi e info attendono la fine delle ore di silenzio; le critiche passano.",
+          "dedup_minutes": "Una notifica sullo stesso argomento entro questo tempo non viene reinviata (0: mai ignorata).",
+          "digest_times": "Quando le notifiche in attesa partono, in un unico messaggio.",
+          "escalation_first": "Una notifica critica non confermata riparte verso tutti dopo questo tempo.",
+          "escalation_second": "Poi al servizio SMS, questo tempo dopo il primo invio.",
+          "sms_service": "Servizio notify che invia SMS (es. notify.free_mobile), per l’ultimo passo.",
+          "away_mode": "Senza nessuno in casa, le info vanno a tutti invece di attendere il riepilogo."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Inviate oggi"
+      },
+      "grouped": {
+        "name": "In attesa del riepilogo"
+      },
+      "held": {
+        "name": "Trattenute dal silenzio"
+      },
+      "duplicates": {
+        "name": "Duplicati evitati"
+      },
+      "pending": {
+        "name": "Critiche da confermare"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Invia",
+      "description": "Invia una notifica tramite Notify Hub: in base a presenza, ore di silenzio e priorità.",
+      "fields": {
+        "message": {
+          "name": "Messaggio",
+          "description": "Testo della notifica."
+        },
+        "title": {
+          "name": "Titolo",
+          "description": "Titolo"
+        },
+        "priority": {
+          "name": "Priorità",
+          "description": "critical: tutti, anche nel silenzio, fino alla conferma; alert: i presenti; info: i presenti o il riepilogo; digest: il prossimo riepilogo."
+        },
+        "topic": {
+          "name": "Argomento",
+          "description": "Due notifiche ravvicinate sullo stesso argomento contano come una (predefinito: titolo e messaggio)."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Origine"
+        },
+        "people": {
+          "name": "Persone",
+          "description": "Solo queste persone (predefinito: per priorità e presenza)."
+        },
+        "url": {
+          "name": "Link",
+          "description": "Link"
+        },
+        "data": {
+          "name": "Dati",
+          "description": "Dati extra per i servizi notify (opzioni dell’app mobile)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Conferma",
+      "description": "Conferma una notifica critica: niente più reinvii, cancellata dai telefoni.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Id della notifica (predefinito: tutte quelle in attesa)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Invia il riepilogo",
+      "description": "Invia ora ciò che attende il riepilogo."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Critica",
+        "alert": "Avviso",
+        "info": "Info",
+        "digest": "Riepilogo"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub non è caricato."
+    }
+  }
+}

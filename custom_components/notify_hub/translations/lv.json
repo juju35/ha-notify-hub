@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Viena darbība visiem mājas paziņojumiem: pēc klātbūtnes, klusajām stundām un prioritātes."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub jau ir iestatīts."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notify Hub noteikumi",
+        "description": "Tos var mainīt arī Notify Hub panelī (cilnes Noteikumi un Iestatījumi).",
+        "data": {
+          "quiet_enabled": "Klusās stundas",
+          "quiet_start": "Kluso stundu sākums",
+          "quiet_end": "Kluso stundu beigas",
+          "dedup_minutes": "Ignorēt dublikātus",
+          "digest_times": "Kopsavilkuma laiki",
+          "escalation_first": "Atkārtot pēc",
+          "escalation_second": "Pēc tam SMS pēc",
+          "sms_service": "SMS pakalpojums",
+          "away_mode": "Prombūtnes režīms",
+          "retention_days": "Glabāt žurnālu"
+        },
+        "data_description": {
+          "quiet_enabled": "Brīdinājumi un informācija gaida kluso stundu beigas; kritiskie iziet cauri.",
+          "dedup_minutes": "Paziņojums par to pašu tēmu šajā laikā netiek sūtīts atkārtoti (0: nekad neignorē).",
+          "digest_times": "Kad gaidošie paziņojumi tiek sūtīti kā viena ziņa.",
+          "escalation_first": "Neapstiprināts kritisks paziņojums pēc šī laika atkal tiek sūtīts visiem.",
+          "escalation_second": "Pēc tam SMS pakalpojumam, šo laiku pēc pirmās sūtīšanas.",
+          "sms_service": "Notify pakalpojums, kas sūta SMS (piem. notify.free_mobile), pēdējam solim.",
+          "away_mode": "Ja neviens nav mājās, informācija tiek sūtīta visiem, nevis kopsavilkumā."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Nosūtīti šodien"
+      },
+      "grouped": {
+        "name": "Gaida kopsavilkumu"
+      },
+      "held": {
+        "name": "Aizturēti klusajās stundās"
+      },
+      "duplicates": {
+        "name": "Novērsti dublikāti"
+      },
+      "pending": {
+        "name": "Apstiprināmie kritiskie"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Sūtīt",
+      "description": "Nosūta paziņojumu caur Notify Hub: pēc klātbūtnes, klusajām stundām un prioritātes.",
+      "fields": {
+        "message": {
+          "name": "Ziņa",
+          "description": "Paziņojuma teksts."
+        },
+        "title": {
+          "name": "Virsraksts",
+          "description": "Virsraksts"
+        },
+        "priority": {
+          "name": "Prioritāte",
+          "description": "critical: visi, arī klusajās stundās, līdz apstiprināšanai; alert: klātesošie; info: klātesošie vai kopsavilkums; digest: nākamais kopsavilkums."
+        },
+        "topic": {
+          "name": "Tēma",
+          "description": "Divi tuvi paziņojumi par vienu tēmu skaitās kā viens (pēc noklusējuma: virsraksts un ziņa)."
+        },
+        "source": {
+          "name": "Avots",
+          "description": "Avots"
+        },
+        "people": {
+          "name": "Personas",
+          "description": "Tikai šīs personas (pēc noklusējuma: pēc prioritātes un klātbūtnes)."
+        },
+        "url": {
+          "name": "Saite",
+          "description": "Saite"
+        },
+        "data": {
+          "name": "Dati",
+          "description": "Papildu dati notify pakalpojumiem (mobilās lietotnes opcijas)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Apstiprināt",
+      "description": "Apstiprina kritisku paziņojumu: vairs neatkārto, dzēš no tālruņiem.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Paziņojuma ID (pēc noklusējuma: visi gaidošie)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Sūtīt kopsavilkumu",
+      "description": "Nosūta tagad to, kas gaida kopsavilkumu."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritisks",
+        "alert": "Brīdinājums",
+        "info": "Informācija",
+        "digest": "Kopsavilkums"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub nav ielādēts."
+    }
+  }
+}

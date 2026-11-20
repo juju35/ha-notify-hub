@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Une seule action pour toutes les notifications de la maison : routées selon la présence, les heures calmes et la priorité."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Règles de Notify Hub",
+        "description": "Aussi modifiables dans le panneau Notify Hub (onglets Règles et Réglages).",
+        "data": {
+          "quiet_enabled": "Heures calmes",
+          "quiet_start": "Début des heures calmes",
+          "quiet_end": "Fin des heures calmes",
+          "dedup_minutes": "Ignorer les doublons pendant",
+          "digest_times": "Heures des résumés",
+          "escalation_first": "Relancer après",
+          "escalation_second": "Puis SMS après",
+          "sms_service": "Service SMS",
+          "away_mode": "Mode absence",
+          "retention_days": "Garder le journal"
+        },
+        "data_description": {
+          "quiet_enabled": "Les alertes et infos attendent la fin des heures calmes ; les critiques passent.",
+          "dedup_minutes": "Une notification sur le même sujet dans ce délai n’est pas renvoyée (0 : jamais ignorée).",
+          "digest_times": "Quand les notifications en attente du résumé partent, en un seul message.",
+          "escalation_first": "Une notification critique que personne n’a acquittée repart vers tout le monde après ce délai.",
+          "escalation_second": "Puis vers le service SMS, ce délai après le premier envoi.",
+          "sms_service": "Service notify qui envoie des SMS (ex. notify.free_mobile), pour la dernière relance.",
+          "away_mode": "Personne à la maison : les infos partent à tout le monde au lieu d’attendre le résumé."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Envoyées aujourd’hui"
+      },
+      "grouped": {
+        "name": "En attente du résumé"
+      },
+      "held": {
+        "name": "Retenues par les heures calmes"
+      },
+      "duplicates": {
+        "name": "Doublons évités"
+      },
+      "pending": {
+        "name": "Critiques à acquitter"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Envoyer",
+      "description": "Envoie une notification via Notify Hub : routée selon la présence, les heures calmes et la priorité.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "Texte de la notification."
+        },
+        "title": {
+          "name": "Titre",
+          "description": "Titre"
+        },
+        "priority": {
+          "name": "Priorité",
+          "description": "critical : tout le monde, même en heures calmes, jusqu’à l’acquittement ; alert : les présents ; info : les présents, ou le résumé ; digest : le prochain résumé."
+        },
+        "topic": {
+          "name": "Sujet",
+          "description": "Deux notifications rapprochées sur le même sujet n’en font qu’une (par défaut : titre et message)."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Source"
+        },
+        "people": {
+          "name": "Personnes",
+          "description": "Seulement ces personnes (par défaut : selon la priorité et la présence)."
+        },
+        "url": {
+          "name": "Lien",
+          "description": "Lien"
+        },
+        "data": {
+          "name": "Données",
+          "description": "Données passées aux services notify (options de l’app mobile)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Acquitter",
+      "description": "Acquitte une notification critique : plus de relance, effacée des téléphones.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Identifiant de la notification (par défaut : toutes celles en attente)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Envoyer le résumé",
+      "description": "Envoie maintenant ce qui attend le résumé."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Critique",
+        "alert": "Alerte",
+        "info": "Info",
+        "digest": "Résumé"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub n’est pas chargé."
+    }
+  }
+}

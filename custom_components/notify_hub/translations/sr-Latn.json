@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Jedna radnja za sva obaveštenja u kući: prema prisustvu, tihim satima i prioritetu."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub je već podešen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pravila za Notify Hub",
+        "description": "Mogu se menjati i u panelu Notify Hub (kartice Pravila i Podešavanja).",
+        "data": {
+          "quiet_enabled": "Tihi sati",
+          "quiet_start": "Početak tihih sati",
+          "quiet_end": "Kraj tihih sati",
+          "dedup_minutes": "Zanemari duplikate tokom",
+          "digest_times": "Vremena pregleda",
+          "escalation_first": "Ponovi posle",
+          "escalation_second": "Zatim SMS posle",
+          "sms_service": "SMS usluga",
+          "away_mode": "Režim odsustva",
+          "retention_days": "Čuvaj dnevnik"
+        },
+        "data_description": {
+          "quiet_enabled": "Upozorenja i informacije čekaju kraj tihih sati; kritična prolaze.",
+          "dedup_minutes": "Obaveštenje na istu temu u ovom roku se ne šalje ponovo (0: nikad se ne zanemaruje).",
+          "digest_times": "Kada se obaveštenja na čekanju šalju kao jedna poruka.",
+          "escalation_first": "Nepotvrđeno kritično obaveštenje ponovo ide svima posle ovog vremena.",
+          "escalation_second": "Zatim SMS usluzi, ovo vreme posle prvog slanja.",
+          "sms_service": "Notify usluga koja šalje SMS (npr. notify.free_mobile), za poslednji korak.",
+          "away_mode": "Kad niko nije kod kuće, informacije idu svima umesto u pregled."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Poslato danas"
+      },
+      "grouped": {
+        "name": "Čeka pregled"
+      },
+      "held": {
+        "name": "Zadržano tihim satima"
+      },
+      "duplicates": {
+        "name": "Izbegnuti duplikati"
+      },
+      "pending": {
+        "name": "Kritična za potvrdu"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Pošalji",
+      "description": "Šalje obaveštenje preko Notify Hub: prema prisustvu, tihim satima i prioritetu.",
+      "fields": {
+        "message": {
+          "name": "Poruka",
+          "description": "Tekst obaveštenja."
+        },
+        "title": {
+          "name": "Naslov",
+          "description": "Naslov"
+        },
+        "priority": {
+          "name": "Prioritet",
+          "description": "critical: svi, i u tihim satima, do potvrde; alert: prisutni; info: prisutni ili pregled; digest: sledeći pregled."
+        },
+        "topic": {
+          "name": "Tema",
+          "description": "Dva bliska obaveštenja na istu temu računaju se kao jedno (podrazumevano: naslov i poruka)."
+        },
+        "source": {
+          "name": "Izvor",
+          "description": "Izvor"
+        },
+        "people": {
+          "name": "Osobe",
+          "description": "Samo ove osobe (podrazumevano: prema prioritetu i prisustvu)."
+        },
+        "url": {
+          "name": "Veza",
+          "description": "Veza"
+        },
+        "data": {
+          "name": "Podaci",
+          "description": "Dodatni podaci za notify usluge (opcije mobilne aplikacije)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Potvrdi",
+      "description": "Potvrđuje kritično obaveštenje: nema više ponavljanja, briše se sa telefona.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID obaveštenja (podrazumevano: sva na čekanju)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Pošalji pregled",
+      "description": "Šalje sada ono što čeka pregled."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritično",
+        "alert": "Upozorenje",
+        "info": "Informacija",
+        "digest": "Pregled"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub nije učitan."
+    }
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Jedna akcia pre všetky upozornenia v dome: podľa prítomnosti, tichých hodín a priority."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub je už nastavený."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pravidlá Notify Hub",
+        "description": "Dajú sa meniť aj v paneli Notify Hub (karty Pravidlá a Nastavenia).",
+        "data": {
+          "quiet_enabled": "Tiché hodiny",
+          "quiet_start": "Začiatok tichých hodín",
+          "quiet_end": "Koniec tichých hodín",
+          "dedup_minutes": "Ignorovať duplikáty počas",
+          "digest_times": "Časy prehľadu",
+          "escalation_first": "Zopakovať po",
+          "escalation_second": "Potom SMS po",
+          "sms_service": "Služba SMS",
+          "away_mode": "Režim neprítomnosti",
+          "retention_days": "Uchovávať denník"
+        },
+        "data_description": {
+          "quiet_enabled": "Upozornenia a informácie čakajú na koniec tichých hodín; kritické prechádzajú.",
+          "dedup_minutes": "Upozornenie na rovnakú tému v tomto čase sa znova nepošle (0: nikdy sa neignoruje).",
+          "digest_times": "Kedy sa čakajúce upozornenia pošlú ako jedna správa.",
+          "escalation_first": "Nepotvrdené kritické upozornenie ide znova všetkým po tomto čase.",
+          "escalation_second": "Potom službe SMS, tento čas po prvom odoslaní.",
+          "sms_service": "Služba notify, ktorá posiela SMS (napr. notify.free_mobile), pre posledný krok.",
+          "away_mode": "Keď nikto nie je doma, informácie idú všetkým namiesto prehľadu."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Odoslané dnes"
+      },
+      "grouped": {
+        "name": "Čakajú na prehľad"
+      },
+      "held": {
+        "name": "Zadržané tichými hodinami"
+      },
+      "duplicates": {
+        "name": "Zabránené duplikáty"
+      },
+      "pending": {
+        "name": "Kritické na potvrdenie"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Odoslať",
+      "description": "Pošle upozornenie cez Notify Hub: podľa prítomnosti, tichých hodín a priority.",
+      "fields": {
+        "message": {
+          "name": "Správa",
+          "description": "Text upozornenia."
+        },
+        "title": {
+          "name": "Názov",
+          "description": "Názov"
+        },
+        "priority": {
+          "name": "Priorita",
+          "description": "critical: všetci, aj v tichých hodinách, do potvrdenia; alert: prítomní; info: prítomní alebo prehľad; digest: ďalší prehľad."
+        },
+        "topic": {
+          "name": "Téma",
+          "description": "Dve blízke upozornenia na rovnakú tému sa počítajú ako jedno (predvolene: názov a správa)."
+        },
+        "source": {
+          "name": "Zdroj",
+          "description": "Zdroj"
+        },
+        "people": {
+          "name": "Osoby",
+          "description": "Iba tieto osoby (predvolene: podľa priority a prítomnosti)."
+        },
+        "url": {
+          "name": "Odkaz",
+          "description": "Odkaz"
+        },
+        "data": {
+          "name": "Údaje",
+          "description": "Ďalšie údaje pre služby notify (možnosti mobilnej aplikácie)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Potvrdiť",
+      "description": "Potvrdí kritické upozornenie: žiadne ďalšie opakovanie, zmaže sa z telefónov.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID upozornenia (predvolene: všetky čakajúce)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Odoslať prehľad",
+      "description": "Pošle teraz to, čo čaká na prehľad."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritické",
+        "alert": "Upozornenie",
+        "info": "Informácia",
+        "digest": "Prehľad"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub nie je načítaný."
+    }
+  }
+}
