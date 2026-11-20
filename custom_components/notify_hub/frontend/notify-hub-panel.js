@@ -6,7 +6,7 @@
  * under it, the current tab in the address.
  * https://github.com/juju35/ha-notify-hub
  */
-var NOTIFY_HUB_PANEL_VERSION = '0.1.0';
+var NOTIFY_HUB_PANEL_VERSION = '0.1.1';
 
 var NH_PANEL_I18N = {
   en: { tab_journal: "Journal", tab_routing: "Routing", tab_rules: "Rules", tab_settings: "Settings", c_sent: "Sent today", c_grouped: "In the digest", c_duplicates: "Duplicates avoided (7 d)", c_pending: "Critical to acknowledge", c_held: "Held by the quiet hours", f_all: "All", f_critical: "Critical", f_pending: "To acknowledge", f_grouped: "In the digest", f_held: "Held", f_duplicate: "Duplicates", col_message: "Message", col_source: "Source", col_people: "People", col_time: "Time", col_status: "Status", empty: "No notification", people: "People and channels", home: "Home", away: "Away", channels: "Channels", found: "Found automatically", custom: "Set by hand", reset: "Back to automatic", no_channel: "No channel", no_people: "No person in Home Assistant", escalation: "Escalation of the critical ones", escalation_text: "The people concerned, then everyone after {a} min, then the SMS service after {b} min. Stops as soon as someone acknowledges.", rules_priorities: "Priorities", p_critical: "Immediately, through the quiet hours, critical sound, until acknowledged", p_alert: "The people at home (everyone when nobody is), held during the quiet hours", p_info: "The people at home, held during the quiet hours; with nobody home, the next digest", p_digest: "Always grouped, sent at the digest times", quiet: "Quiet hours", quiet_start: "Start", quiet_end: "End", dedup: "Ignore duplicates for", dedup_text: "Same topic (or same title and message) within this time", digest_times: "Digest times", add_time: "Add", away_mode: "Away mode", away_text: "With nobody home, infos go to everyone instead of the digest", sms: "SMS service", sms_none: "None", esc_first: "Again to everyone after", esc_second: "SMS after", retention: "Keep the journal", days: "days", minutes: "min", test: "Send a test", test_info: "Info test", test_critical: "Critical test", digest_now: "Send the digest now", save: "Save", saved: "Saved", sent_ok: "Sent", error: "Error", subtitle_quiet: "Quiet hours until {t}", subtitle_ok: "{n} sent today", acknowledge_all: "Acknowledge all" },
@@ -368,10 +368,10 @@ class NotifyHubPanel extends HTMLElement {
               --idle: var(--secondary-text-color, #727272); --info: #2563eb; --accent: #2563eb; }
       .page { min-height: 100vh; background: var(--primary-background-color); color: var(--primary-text-color); font-family: var(--paper-font-body1_-_font-family, inherit); }
       .page.tone-ok { --c: var(--accent); } .page.tone-bad { --c: var(--bad); } .page.tone-idle { --c: var(--idle); }
-      .top { position: relative; height: 110px; overflow: hidden; background: linear-gradient(#dbeafe, #f0f6ff); }
+      .top { position: relative; height: 90px; overflow: hidden; background: linear-gradient(#dbeafe, #f0f6ff); }
       .night .top { background: linear-gradient(#0f1b33, #1c2a48); }
       .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #93c5fd; } .night .ground { background: #36507e; }
-      .scene { position: absolute; right: 340px; bottom: 6px; height: 104px; width: auto; max-width: 40%; }
+      .scene { position: absolute; right: 340px; bottom: 6px; height: 84px; width: auto; max-width: 40%; }
       @media (max-width: 900px) { .scene { right: 120px; opacity: .35; } }
       .letter rect { fill: #fff; stroke: #93c5fd; stroke-width: 2; } .letter path { fill: none; stroke: #93c5fd; stroke-width: 2; }
       .night .letter rect { fill: #e6ebf3; stroke: #5b7bb3; } .night .letter path { stroke: #5b7bb3; }
@@ -385,7 +385,7 @@ class NotifyHubPanel extends HTMLElement {
       @keyframes nhp-wave { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
       @keyframes nhp-ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
       @media (prefers-reduced-motion: reduce) { .letter, .wave, .bell.ring { animation: none; } }
-      .bar { position: absolute; left: 24px; right: 24px; top: 26px; display: flex; align-items: center; gap: 12px; }
+      .bar { position: absolute; left: 24px; right: 24px; top: 0; bottom: 6px; display: flex; align-items: center; gap: 12px; }
       .menu { color: #1f2937; } .night .menu { color: #f3f4f6; }
       .ico { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, #fff); }
       .night .ico { background: color-mix(in srgb, var(--c) 30%, #1c2a48); }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 - 2026-11-20
+
+### Fixes
+
+- Panel: illustrated header 90 px high, like the card and the other ha-* panels (was 110 px)
+
 ## 0.1.0 - 2026-11-20
 
 ### Features
