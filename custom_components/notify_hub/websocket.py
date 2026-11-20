@@ -11,6 +11,8 @@ from homeassistant.core import HomeAssistant, callback
 
 from .const import (
     CONF_AWAY_MODE,
+    CONF_CAPTURE_PERSISTENT,
+    CONF_CAPTURE_REPAIRS,
     CONF_DEDUP_MINUTES,
     CONF_DIGEST_TIMES,
     CONF_ESCALATION_MINUTES,
@@ -21,6 +23,7 @@ from .const import (
     CONF_QUIET_START,
     CONF_RETENTION_DAYS,
     CONF_SMS_SERVICE,
+    CONF_SOURCES,
     DOMAIN,
     HIDE_HEADER_MODES,
     MAX_JOURNAL,
@@ -29,6 +32,7 @@ from .const import (
     VERSION,
 )
 from .hub import NotifyHub, parse_time
+from .sources import SOURCES_SCHEMA, clean_sources
 
 # What the panel may change, and how each value is checked.
 OPTION_SCHEMA = vol.Schema(
@@ -46,6 +50,9 @@ OPTION_SCHEMA = vol.Schema(
         vol.Optional(CONF_RETENTION_DAYS): vol.All(vol.Coerce(int), vol.Range(min=1, max=90)),
         vol.Optional(CONF_PEOPLE): {str: [str]},
         vol.Optional(CONF_HIDE_HEADER): vol.In(HIDE_HEADER_MODES),
+        vol.Optional(CONF_SOURCES): SOURCES_SCHEMA,
+        vol.Optional(CONF_CAPTURE_PERSISTENT): bool,
+        vol.Optional(CONF_CAPTURE_REPAIRS): bool,
     }
 )
 
@@ -88,6 +95,7 @@ def ws_state(hass: HomeAssistant, connection: websocket_api.ActiveConnection, ms
             **hub.summary(msg["limit"]),
             "people": hub.people(),
             "services": hub.notify_services(),
+            "sources": hub.sources(),
             "options": dict(hub.entry.options),
         },
     )
@@ -121,7 +129,7 @@ async def ws_test(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
         _not_loaded(connection, msg)
         return
     entry = await hub.async_send(
-        msg["message"], title="Notify Hub", priority=msg["priority"], source="Notify Hub", topic=f"test:{msg['id']}"
+        msg["message"], title="Notify Hub", priority=msg["priority"], source=DOMAIN, topic=f"test:{msg['id']}"
     )
     connection.send_result(msg["id"], {"status": entry["status"], "people": entry["people"]})
 
@@ -160,6 +168,8 @@ def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
         )
     if CONF_PEOPLE in changes:
         changes[CONF_PEOPLE] = {person: channels for person, channels in changes[CONF_PEOPLE].items() if channels}
+    if CONF_SOURCES in changes:
+        changes[CONF_SOURCES] = clean_sources(changes[CONF_SOURCES])
     options = {**hub.entry.options, **changes}
     if not options.get(CONF_SMS_SERVICE):
         options.pop(CONF_SMS_SERVICE, None)

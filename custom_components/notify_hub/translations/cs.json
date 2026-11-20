@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Pravidla Notify Hub",
+        "description": "Vyberte, co změnit.",
+        "menu_options": {
+          "rules": "Pravidla: tiché hodiny, duplicity, přehledy, eskalace",
+          "sources": "Zdroje: pravidla podle integrace, zachycená oznámení"
+        }
+      },
+      "rules": {
+        "title": "Pravidla Notify Hub",
         "description": "Lze je měnit i v panelu Notify Hub (karty Pravidla a Nastavení).",
         "data": {
           "quiet_enabled": "Tiché hodiny",
@@ -36,7 +44,23 @@
           "sms_service": "Služba notify, která posílá SMS (např. notify.free_mobile), pro poslední krok.",
           "away_mode": "Když nikdo není doma, informace jdou všem místo přehledu."
         }
+      },
+      "sources": {
+        "title": "Zdroje",
+        "description": "Jedno pravidlo na zdroj, podle integrace (např. hue), automatizace (automation.…) nebo textu, s libovolnými z: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Také na kartě Zdroje panelu.",
+        "data": {
+          "sources": "Pravidla zdrojů",
+          "capture_persistent": "Trvalá oznámení",
+          "capture_repairs": "Nové opravy"
+        },
+        "data_description": {
+          "capture_persistent": "Oznámení, která integrace zveřejňují v Home Assistant (zvonek postranního panelu), jdou také přes hub.",
+          "capture_repairs": "Každá nová oprava jde také přes hub: poplach při chybě, info při varování."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Neplatné pravidlo: zkontrolujte pole, prioritu, ikonu (mdi:…) a barvu (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Zdroj",
-          "description": "Zdroj"
+          "description": "Integrace, entita nebo text, pod kterým se oznámení ukládá (výchozí: z volající automatizace)."
         },
         "people": {
           "name": "Osoby",

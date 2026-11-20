@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Règles de Notify Hub",
+        "description": "Choisissez ce que vous voulez modifier.",
+        "menu_options": {
+          "rules": "Règles : heures calmes, doublons, résumés, relance",
+          "sources": "Sources : règles par intégration, notifications captées"
+        }
+      },
+      "rules": {
+        "title": "Règles de Notify Hub",
         "description": "Aussi modifiables dans le panneau Notify Hub (onglets Règles et Réglages).",
         "data": {
           "quiet_enabled": "Heures calmes",
@@ -36,7 +44,23 @@
           "sms_service": "Service notify qui envoie des SMS (ex. notify.free_mobile), pour la dernière relance.",
           "away_mode": "Personne à la maison : les infos partent à tout le monde au lieu d’attendre le résumé."
         }
+      },
+      "sources": {
+        "title": "Sources",
+        "description": "Une règle par source, repérée par son intégration (ex. hue), son automatisation (automation.…) ou son texte, avec au choix : name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Aussi dans l’onglet Sources du panneau.",
+        "data": {
+          "sources": "Règles par source",
+          "capture_persistent": "Notifications persistantes",
+          "capture_repairs": "Nouvelles réparations"
+        },
+        "data_description": {
+          "capture_persistent": "Les notifications que les intégrations publient dans Home Assistant (la cloche de la barre latérale) passent aussi par le hub.",
+          "capture_repairs": "Chaque nouvelle réparation passe aussi par le hub : une alerte pour une erreur, une info pour un avertissement."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Règle invalide : vérifiez les champs, la priorité, l’icône (mdi:…) et la couleur (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Source",
-          "description": "Source"
+          "description": "Intégration, entité ou texte sous lequel la notification est rangée (par défaut : trouvé depuis l’automatisation appelante)."
         },
         "people": {
           "name": "Personnes",

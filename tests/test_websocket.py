@@ -90,7 +90,9 @@ async def test_options_flow(hass: HomeAssistant, sent) -> None:
     people(hass)
     entry = await setup_hub(hass, **{CONF_SMS_SERVICE: "notify.sms"})
     flow = await hass.config_entries.options.async_init(entry.entry_id)
-    assert flow["type"] is FlowResultType.FORM
+    assert flow["type"] is FlowResultType.MENU
+    flow = await hass.config_entries.options.async_configure(flow["flow_id"], {"next_step_id": "rules"})
+    assert flow["type"] is FlowResultType.FORM and flow["step_id"] == "rules"
     result = await hass.config_entries.options.async_configure(
         flow["flow_id"],
         {
@@ -113,6 +115,31 @@ async def test_options_flow(hass: HomeAssistant, sent) -> None:
     assert options["escalation_minutes"] == [8, 8]  # the second step never comes before the first
     assert CONF_SMS_SERVICE not in options
     assert options[CONF_PEOPLE]  # kept: not part of the form
+
+
+async def test_options_flow_sources(hass: HomeAssistant, sent) -> None:
+    people(hass)
+    entry = await setup_hub(hass)
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    flow = await hass.config_entries.options.async_configure(flow["flow_id"], {"next_step_id": "sources"})
+    assert flow["step_id"] == "sources"
+    bad = await hass.config_entries.options.async_configure(
+        flow["flow_id"],
+        {"sources": {"hue": {"priority": "loud"}}, "capture_persistent": True, "capture_repairs": False},
+    )
+    assert bad["type"] is FlowResultType.FORM and bad["errors"] == {"sources": "invalid_sources"}
+    result = await hass.config_entries.options.async_configure(
+        flow["flow_id"],
+        {
+            "sources": {"hue": {"icon": "mdi:lightbulb", "muted": False, "name": " "}, "empty": {"muted": False}},
+            "capture_persistent": True,
+            "capture_repairs": False,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["sources"] == {"hue": {"icon": "mdi:lightbulb"}}  # empty fields and rules dropped
+    assert entry.options["capture_persistent"] is True
+    assert entry.options[CONF_PEOPLE]
 
 
 async def test_single_instance(hass: HomeAssistant, sent) -> None:

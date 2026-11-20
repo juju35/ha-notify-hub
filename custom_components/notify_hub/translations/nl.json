@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Notify Hub-regels",
+        "description": "Kies wat u wilt wijzigen.",
+        "menu_options": {
+          "rules": "Regels: stille uren, dubbele, overzichten, escalatie",
+          "sources": "Bronnen: regels per integratie, opgevangen meldingen"
+        }
+      },
+      "rules": {
+        "title": "Notify Hub-regels",
         "description": "Ook te wijzigen in het Notify Hub-paneel (tabbladen Regels en Instellingen).",
         "data": {
           "quiet_enabled": "Stille uren",
@@ -36,7 +44,23 @@
           "sms_service": "Notify-dienst die sms verstuurt (bv. notify.free_mobile), voor de laatste stap.",
           "away_mode": "Is niemand thuis, dan gaat info naar iedereen in plaats van naar het overzicht."
         }
+      },
+      "sources": {
+        "title": "Bronnen",
+        "description": "Eén regel per bron, op integratie (bijv. hue), automatisering (automation.…) of tekst, met een van: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Ook in het tabblad Bronnen van het paneel.",
+        "data": {
+          "sources": "Regels per bron",
+          "capture_persistent": "Blijvende meldingen",
+          "capture_repairs": "Nieuwe reparaties"
+        },
+        "data_description": {
+          "capture_persistent": "De meldingen die integraties in Home Assistant plaatsen (de bel in de zijbalk) gaan ook via de hub.",
+          "capture_repairs": "Elke nieuwe reparatie gaat ook via de hub: een alarm bij een fout, een info bij een waarschuwing."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Ongeldige regel: controleer de velden, de prioriteit, het pictogram (mdi:…) en de kleur (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Bron",
-          "description": "Bron"
+          "description": "Integratie, entiteit of tekst waaronder de melding wordt opgeslagen (standaard: gevonden via de aanroepende automatisering)."
         },
         "people": {
           "name": "Personen",

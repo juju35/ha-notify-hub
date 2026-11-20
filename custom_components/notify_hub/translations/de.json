@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Notify-Hub-Regeln",
+        "description": "Wählen Sie, was geändert werden soll.",
+        "menu_options": {
+          "rules": "Regeln: Ruhezeiten, Duplikate, Zusammenfassungen, Eskalation",
+          "sources": "Quellen: Regeln pro Integration, erfasste Benachrichtigungen"
+        }
+      },
+      "rules": {
+        "title": "Notify-Hub-Regeln",
         "description": "Auch im Notify-Hub-Panel änderbar (Tabs Regeln und Einstellungen).",
         "data": {
           "quiet_enabled": "Ruhezeiten",
@@ -36,7 +44,23 @@
           "sms_service": "Notify-Dienst, der SMS sendet (z. B. notify.free_mobile), für die letzte Stufe.",
           "away_mode": "Ist niemand zu Hause, gehen Infos an alle statt in die Zusammenfassung."
         }
+      },
+      "sources": {
+        "title": "Quellen",
+        "description": "Eine Regel pro Quelle, nach Integration (z. B. hue), Automatisierung (automation.…) oder Text, mit beliebigen Feldern: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Auch im Reiter Quellen des Panels.",
+        "data": {
+          "sources": "Regeln pro Quelle",
+          "capture_persistent": "Dauerhafte Benachrichtigungen",
+          "capture_repairs": "Neue Reparaturen"
+        },
+        "data_description": {
+          "capture_persistent": "Die Benachrichtigungen, die Integrationen in Home Assistant anzeigen (die Glocke der Seitenleiste), laufen auch über den Hub.",
+          "capture_repairs": "Jede neue Reparatur läuft auch über den Hub: ein Alarm bei einem Fehler, eine Info bei einer Warnung."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Ungültige Regel: Felder, Priorität, Symbol (mdi:…) und Farbe (#rrggbb) prüfen."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Quelle",
-          "description": "Quelle"
+          "description": "Integration, Entität oder Text, unter dem die Benachrichtigung abgelegt wird (Standard: aus der aufrufenden Automatisierung ermittelt)."
         },
         "people": {
           "name": "Personen",

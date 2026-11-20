@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Pravila za Notify Hub",
+        "description": "Izaberite šta da promenite.",
+        "menu_options": {
+          "rules": "Pravila: tihi sati, duplikati, pregledi, ponavljanje",
+          "sources": "Izvori: pravila po integraciji, uhvaćena obaveštenja"
+        }
+      },
+      "rules": {
+        "title": "Pravila za Notify Hub",
         "description": "Mogu se menjati i u panelu Notify Hub (kartice Pravila i Podešavanja).",
         "data": {
           "quiet_enabled": "Tihi sati",
@@ -36,7 +44,23 @@
           "sms_service": "Notify usluga koja šalje SMS (npr. notify.free_mobile), za poslednji korak.",
           "away_mode": "Kad niko nije kod kuće, informacije idu svima umesto u pregled."
         }
+      },
+      "sources": {
+        "title": "Izvori",
+        "description": "Jedno pravilo po izvoru, po integraciji (npr. hue), automatizaciji (automation.…) ili tekstu, sa bilo kojim od: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. I na kartici Izvori panela.",
+        "data": {
+          "sources": "Pravila po izvoru",
+          "capture_persistent": "Trajna obaveštenja",
+          "capture_repairs": "Nove popravke"
+        },
+        "data_description": {
+          "capture_persistent": "Obaveštenja koja integracije objavljuju u Home Assistant (zvonce bočne trake) takođe idu kroz hab.",
+          "capture_repairs": "Svaka nova popravka takođe ide kroz hab: uzbuna za grešku, informacija za upozorenje."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Nevažeće pravilo: proverite polja, prioritet, ikonicu (mdi:…) i boju (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Izvor",
-          "description": "Izvor"
+          "description": "Integracija, entitet ili tekst pod kojim se obaveštenje čuva (podrazumevano: iz automatizacije koja poziva)."
         },
         "people": {
           "name": "Osobe",

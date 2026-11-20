@@ -56,6 +56,8 @@ def test_brazilian_portuguese_is_european():
 # Kept as is in the Cyrillic text: names, code and placeholders.
 LATIN_ALLOWED = re.compile(
     r"Notify Hub|\bnotify(?:\.free_mobile)?\b|\b(?:critical|alert|info|digest)\b|\{[^}]*\}|\bID\b"
+    r"|Home Assistant|mdi:|#rrggbb"
+    r"|\b(?:hue|automation|name|icon|color|priority|people|ignore_quiet|dedup_minutes|muted)\b"
 )
 
 

@@ -10,6 +10,9 @@ found by themselves, or the ones set in the options (`people`). By priority:
   in away mode);
 - digest: kept for the next digest, sent at the digest times as one message.
 A notification whose topic (else title and message) was handled less than `dedup_minutes` ago is not sent again.
+Each notification is filed under its source (an integration, found by itself, see sources.py), whose rules — forced
+priority, people, duplicate delay, quiet hours ignored, muted — apply before the above; its icon and color go to the
+phones (Android) and to the panel and the card.
 Everything is kept in a journal (.storage), newest first, for the panel, the card and the sensors.
 """
 
@@ -23,7 +26,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_HOME
-from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, Context, Event, HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
@@ -31,6 +34,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
+from .capture import Capture
 from .const import (
     ACK_ACTION,
     CONF_AWAY_MODE,
@@ -43,6 +47,7 @@ from .const import (
     CONF_QUIET_START,
     CONF_RETENTION_DAYS,
     CONF_SMS_SERVICE,
+    CONF_SOURCES,
     DEFAULT_DEDUP_MINUTES,
     DEFAULT_DIGEST_TIMES,
     DEFAULT_ESCALATION_MINUTES,
@@ -52,6 +57,7 @@ from .const import (
     EVENT_ACTION,
     EVENT_SENT,
     MAX_JOURNAL,
+    PRIORITIES,
     PRIORITY_CRITICAL,
     PRIORITY_DIGEST,
     PRIORITY_INFO,
@@ -62,12 +68,14 @@ from .const import (
     STATUS_FAILED,
     STATUS_GROUPED,
     STATUS_HELD,
+    STATUS_MUTED,
     STATUS_NOBODY,
     STATUS_PENDING,
     STORAGE_KEY,
     STORAGE_VERSION,
     TICK,
 )
+from .sources import resolve
 from .strings import text
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,6 +121,7 @@ class NotifyHub:
         # hour, for the "today" and "7 days" windows) instead of parsing the whole journal six times.
         self._rev = 0
         self._counts: tuple[tuple[int, str], dict[str, int]] | None = None
+        self.capture = Capture(self)
 
     # ── Options ─────────────────────────────────────────────────────────────
 
@@ -154,6 +163,12 @@ class NotifyHub:
         except (TypeError, ValueError, IndexError):
             first, second = DEFAULT_ESCALATION_MINUTES
         return first, second
+
+    def source_rule(self, key: str) -> dict[str, Any]:
+        """The rule set for a source (empty when none)."""
+        rules = self.options.get(CONF_SOURCES) or {}
+        rule = rules.get(key) if key else None
+        return dict(rule) if isinstance(rule, dict) else {}
 
     @property
     def sms_service(self) -> str | None:
@@ -230,8 +245,16 @@ class NotifyHub:
             self._digest_sent = self._last_digest_slot(dt_util.now())
         self._unsubs.append(async_track_time_interval(self.hass, self._async_tick, TICK))
         self._unsubs.append(self.hass.bus.async_listen(EVENT_ACTION, self._async_on_action))
+        self.capture.async_sync()
+
+    @callback
+    def async_options_updated(self) -> None:
+        """The options changed: the captures follow them, the entities and the panel show them."""
+        self.capture.async_sync()
+        self._changed()
 
     async def async_unload(self) -> None:
+        self.capture.async_stop()
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
@@ -264,9 +287,20 @@ class NotifyHub:
         people: list[str] | None = None,
         url: str | None = None,
         data: dict[str, Any] | None = None,
+        context: Context | None = None,
+        found: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Handle one notification; its journal entry (with its `status`) is returned."""
+        """Handle one notification; its journal entry (with its `status`) is returned.
+
+        The source is resolved from `source` (else the caller found from `context`), unless `found` gives it already
+        (a captured notification); its rule may force the priority and the people."""
         now = dt_util.utcnow()
+        src = found or resolve(self.hass, source, context)
+        rule = self.source_rule(src["key"])
+        if rule.get("priority") in PRIORITIES:
+            priority = rule["priority"]
+        if not people and rule.get("people"):
+            people = list(rule["people"])
         entry: dict[str, Any] = {
             "id": uuid.uuid4().hex[:12],
             "time": now.isoformat(),
@@ -274,28 +308,36 @@ class NotifyHub:
             "message": message,
             "priority": priority,
             "topic": topic or f"{title or ''}|{message}",
-            "source": source or "",
+            "source": rule.get("name") or src["name"],
+            "source_key": src["key"],
+            "domain": src.get("domain"),
+            "origin": src.get("origin"),
             "url": url,
             "data": data or {},
             "requested": list(people or []),
             "people": [],
             "status": STATUS_DELIVERED,
         }
-        if self._duplicate(entry, now):
+        dedup = self.dedup
+        if isinstance(rule.get("dedup_minutes"), int | float):
+            dedup = timedelta(minutes=float(rule["dedup_minutes"]))
+        if rule.get("muted"):
+            entry["status"] = STATUS_MUTED
+        elif self._duplicate(entry, now, dedup):
             entry["status"] = STATUS_DUPLICATE
         elif priority == PRIORITY_DIGEST:
             entry["status"] = STATUS_GROUPED
         elif priority == PRIORITY_CRITICAL:
             await self._send_critical(entry, people)
-        elif self.is_quiet(now):
+        elif self.is_quiet(now) and not rule.get("ignore_quiet"):
             entry["status"] = STATUS_HELD
         else:
             await self._send_normal(entry, people)
         self._record(entry)
         return entry
 
-    def _duplicate(self, entry: dict[str, Any], now: datetime) -> bool:
-        since = now - self.dedup
+    def _duplicate(self, entry: dict[str, Any], now: datetime, dedup: timedelta) -> bool:
+        since = now - dedup
         for past in self.journal:
             if dt_util.parse_datetime(past["time"]) < since:
                 break
@@ -361,6 +403,12 @@ class NotifyHub:
         data.setdefault("tag", entry["id"])
         if entry["source"]:
             data.setdefault("group", entry["source"])
+        # The source's look (Android: the small icon and the accent of the notification).
+        rule = self.source_rule(entry.get("source_key") or "")
+        if str(rule.get("icon") or "").startswith("mdi:"):
+            data.setdefault("notification_icon", rule["icon"])
+        if rule.get("color"):
+            data.setdefault("color", rule["color"])
         if entry.get("url"):
             data.setdefault("url", entry["url"])
             data.setdefault("clickAction", entry["url"])
@@ -561,13 +609,75 @@ class NotifyHub:
         upcoming = [t for t in times if t > local] or times
         return upcoming[0].strftime("%H:%M")
 
+    @staticmethod
+    def key_of(entry: dict[str, Any]) -> str:
+        """The source key of a journal entry (older entries only have the source's text)."""
+        if "source_key" in entry:
+            return str(entry["source_key"] or "")
+        return slugify(entry.get("source") or "")
+
+    def look(self, entries: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        """{source key: name, domain, icon, color} of the sources of these entries, for the card and the panel."""
+        out: dict[str, dict[str, Any]] = {}
+        for entry in entries:
+            key = self.key_of(entry)
+            if not key or key in out:
+                continue
+            rule = self.source_rule(key)
+            out[key] = {
+                "name": rule.get("name") or entry.get("source") or key,
+                "domain": entry.get("domain"),
+                "icon": rule.get("icon"),
+                "color": rule.get("color"),
+            }
+        return out
+
+    def sources(self) -> list[dict[str, Any]]:
+        """Every source seen in the journal or given a rule: its look, its rule, its counts (7 days) and the last
+        notification, the busiest first."""
+        week = dt_util.utcnow() - timedelta(days=7)
+        seen: dict[str, dict[str, Any]] = {}
+        for entry in self.journal:  # newest first: the first one met is the last notification
+            key = self.key_of(entry)
+            if not key:
+                continue
+            item = seen.setdefault(
+                key,
+                {
+                    "key": key,
+                    "name": entry.get("source") or key,
+                    "domain": entry.get("domain"),
+                    "origins": [],
+                    "count": 0,
+                    "muted": 0,
+                    "last": entry["time"],
+                },
+            )
+            if dt_util.parse_datetime(entry["time"]) >= week:
+                item["count"] += 1
+                item["muted"] += entry["status"] == STATUS_MUTED
+            if (origin := entry.get("origin")) and origin not in item["origins"] and len(item["origins"]) < 5:
+                item["origins"].append(origin)
+        for key, rule in (self.options.get(CONF_SOURCES) or {}).items():
+            item = seen.setdefault(
+                key, {"key": key, "name": key, "domain": None, "origins": [], "count": 0, "muted": 0, "last": None}
+            )
+            if isinstance(rule, dict):
+                item["rule"] = rule
+                item["name"] = rule.get("name") or item["name"]
+        for item in seen.values():
+            item.setdefault("rule", {})
+        return sorted(seen.values(), key=lambda i: (-i["count"], str(i["name"]).lower()))
+
     def summary(self, limit: int = 20) -> dict[str, Any]:
         """What the card and the panel show."""
         quiet = self.quiet_hours
+        recent = self.journal[:limit]
         return {
             "counts": self.counts(),
             "quiet": self.is_quiet(),
             "quiet_hours": [t.strftime("%H:%M") for t in quiet] if quiet else None,
             "next_digest": self.next_digest(),
-            "recent": [{k: v for k, v in e.items() if k != "data"} for e in self.journal[:limit]],
+            "recent": [{**{k: v for k, v in e.items() if k != "data"}, "source_key": self.key_of(e)} for e in recent],
+            "sources": self.look(recent),
         }

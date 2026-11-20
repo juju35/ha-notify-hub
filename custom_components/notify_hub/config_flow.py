@@ -1,5 +1,6 @@
-"""Config flow: one hub, nothing to ask. Options: the quiet hours, the duplicates, the digests, the escalation (also
-in the panel's Rules and Settings tabs)."""
+"""Config flow: one hub, nothing to ask. Options, in two steps: the rules (quiet hours, duplicates, digests,
+escalation — also in the panel's Rules and Settings tabs) and the sources (each source's rule as YAML, the captured
+notifications — also in the panel's Sources tab)."""
 
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    ObjectSelector,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -22,6 +24,8 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_AWAY_MODE,
+    CONF_CAPTURE_PERSISTENT,
+    CONF_CAPTURE_REPAIRS,
     CONF_DEDUP_MINUTES,
     CONF_DIGEST_TIMES,
     CONF_ESCALATION_MINUTES,
@@ -30,6 +34,7 @@ from .const import (
     CONF_QUIET_START,
     CONF_RETENTION_DAYS,
     CONF_SMS_SERVICE,
+    CONF_SOURCES,
     DEFAULT_DEDUP_MINUTES,
     DEFAULT_DIGEST_TIMES,
     DEFAULT_ESCALATION_MINUTES,
@@ -40,6 +45,7 @@ from .const import (
     TITLE,
 )
 from .hub import parse_time
+from .sources import SOURCES_SCHEMA, clean_sources
 
 
 def default_options() -> dict[str, Any]:
@@ -79,6 +85,40 @@ class NotifyHubConfigFlow(ConfigFlow, domain=DOMAIN):
 
 class NotifyHubOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        return self.async_show_menu(step_id="init", menu_options=["rules", "sources"])
+
+    async def async_step_sources(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Each source's rule, as YAML (same fields as the panel's Sources tab), and the captured notifications."""
+        errors: dict[str, str] = {}
+        current = self.config_entry.options
+        if user_input is not None:
+            try:
+                sources = clean_sources(SOURCES_SCHEMA(user_input.get(CONF_SOURCES) or {}))
+            except vol.Invalid:
+                errors[CONF_SOURCES] = "invalid_sources"
+            else:
+                return self.async_create_entry(
+                    data={
+                        **current,
+                        CONF_SOURCES: sources,
+                        CONF_CAPTURE_PERSISTENT: bool(user_input.get(CONF_CAPTURE_PERSISTENT)),
+                        CONF_CAPTURE_REPAIRS: bool(user_input.get(CONF_CAPTURE_REPAIRS)),
+                    }
+                )
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_SOURCES, description={"suggested_value": dict(current.get(CONF_SOURCES) or {})}
+                ): ObjectSelector(),
+                vol.Required(
+                    CONF_CAPTURE_PERSISTENT, default=bool(current.get(CONF_CAPTURE_PERSISTENT))
+                ): BooleanSelector(),
+                vol.Required(CONF_CAPTURE_REPAIRS, default=bool(current.get(CONF_CAPTURE_REPAIRS))): BooleanSelector(),
+            }
+        )
+        return self.async_show_form(step_id="sources", data_schema=schema, errors=errors)
+
+    async def async_step_rules(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         current = {**default_options(), **self.config_entry.options}
         if user_input is not None:
             first, second = int(user_input.pop("escalation_first")), int(user_input.pop("escalation_second"))
@@ -123,4 +163,4 @@ class NotifyHubOptionsFlow(OptionsFlow):
                 ),
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="rules", data_schema=schema)

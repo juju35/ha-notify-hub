@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Regole di Notify Hub",
+        "description": "Scegli cosa modificare.",
+        "menu_options": {
+          "rules": "Regole: ore di silenzio, duplicati, riepiloghi, escalation",
+          "sources": "Origini: regole per integrazione, notifiche catturate"
+        }
+      },
+      "rules": {
+        "title": "Regole di Notify Hub",
         "description": "Modificabili anche nel pannello Notify Hub (schede Regole e Impostazioni).",
         "data": {
           "quiet_enabled": "Ore di silenzio",
@@ -36,7 +44,23 @@
           "sms_service": "Servizio notify che invia SMS (es. notify.free_mobile), per l’ultimo passo.",
           "away_mode": "Senza nessuno in casa, le info vanno a tutti invece di attendere il riepilogo."
         }
+      },
+      "sources": {
+        "title": "Origini",
+        "description": "Una regola per origine, indicata dalla sua integrazione (es. hue), automazione (automation.…) o testo, con uno qualsiasi di: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Anche nella scheda Origini del pannello.",
+        "data": {
+          "sources": "Regole per origine",
+          "capture_persistent": "Notifiche persistenti",
+          "capture_repairs": "Nuove riparazioni"
+        },
+        "data_description": {
+          "capture_persistent": "Le notifiche che le integrazioni pubblicano in Home Assistant (la campanella della barra laterale) passano anche dall’hub.",
+          "capture_repairs": "Ogni nuova riparazione passa anche dall’hub: un avviso per un errore, un’info per un avvertimento."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Regola non valida: controlla i campi, la priorità, l’icona (mdi:…) e il colore (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Origine",
-          "description": "Origine"
+          "description": "Integrazione, entità o testo sotto cui è archiviata la notifica (predefinito: ricavato dall’automazione chiamante)."
         },
         "people": {
           "name": "Persone",

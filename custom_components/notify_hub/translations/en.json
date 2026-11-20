@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Notify Hub rules",
+        "description": "Choose what to change.",
+        "menu_options": {
+          "rules": "Rules: quiet hours, duplicates, digests, escalation",
+          "sources": "Sources: rules per integration, captured notifications"
+        }
+      },
+      "rules": {
+        "title": "Notify Hub rules",
         "description": "Also editable in the Notify Hub panel (Rules and Settings tabs).",
         "data": {
           "quiet_enabled": "Quiet hours",
@@ -36,7 +44,23 @@
           "sms_service": "Notify service that sends text messages (e.g. notify.free_mobile), for the last escalation step.",
           "away_mode": "With nobody home, infos go to everyone instead of waiting for the digest."
         }
+      },
+      "sources": {
+        "title": "Sources",
+        "description": "One rule per source, keyed by its integration (e.g. hue), automation (automation.…) or text, with any of: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Also in the panel's Sources tab.",
+        "data": {
+          "sources": "Rules per source",
+          "capture_persistent": "Persistent notifications",
+          "capture_repairs": "New repairs"
+        },
+        "data_description": {
+          "capture_persistent": "The notifications the integrations post in Home Assistant (the sidebar bell) also go through the hub.",
+          "capture_repairs": "Each new repair also goes through the hub: an alert for an error, an info for a warning."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Invalid rule: check the fields, the priority, the icon (mdi:…) and the color (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Source",
-          "description": "Source"
+          "description": "Integration, entity or text the notification is filed under (default: found from the calling automation)."
         },
         "people": {
           "name": "People",

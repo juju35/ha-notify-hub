@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Notify Hub noteikumi",
+        "description": "Izvēlieties, ko mainīt.",
+        "menu_options": {
+          "rules": "Noteikumi: klusās stundas, dublikāti, kopsavilkumi, eskalācija",
+          "sources": "Avoti: noteikumi pa integrācijām, uztvertie paziņojumi"
+        }
+      },
+      "rules": {
+        "title": "Notify Hub noteikumi",
         "description": "Tos var mainīt arī Notify Hub panelī (cilnes Noteikumi un Iestatījumi).",
         "data": {
           "quiet_enabled": "Klusās stundas",
@@ -36,7 +44,23 @@
           "sms_service": "Notify pakalpojums, kas sūta SMS (piem. notify.free_mobile), pēdējam solim.",
           "away_mode": "Ja neviens nav mājās, informācija tiek sūtīta visiem, nevis kopsavilkumā."
         }
+      },
+      "sources": {
+        "title": "Avoti",
+        "description": "Viens noteikums avotam, pēc integrācijas (piem. hue), automatizācijas (automation.…) vai teksta, ar jebkuru no: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Arī paneļa cilnē Avoti.",
+        "data": {
+          "sources": "Avotu noteikumi",
+          "capture_persistent": "Pastāvīgie paziņojumi",
+          "capture_repairs": "Jauni labojumi"
+        },
+        "data_description": {
+          "capture_persistent": "Paziņojumi, ko integrācijas publicē Home Assistant (sānjoslas zvaniņš), arī iet caur centrmezglu.",
+          "capture_repairs": "Katrs jauns labojums arī iet caur centrmezglu: trauksme kļūdai, informācija brīdinājumam."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Nederīgs noteikums: pārbaudiet laukus, prioritāti, ikonu (mdi:…) un krāsu (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Avots",
-          "description": "Avots"
+          "description": "Integrācija, vienība vai teksts, ar kuru paziņojums tiek saglabāts (pēc noklusējuma: no izsaucošās automatizācijas)."
         },
         "people": {
           "name": "Personas",
