@@ -35,8 +35,10 @@ Home Assistant integration that puts **one hub in front of all your notification
 - **Duplicates dropped** — the same topic (or the same title and message) within N minutes is sent once
 - **Digests** — one grouped notification at the times you choose (08:00 and 19:00 by default)
 - **Escalation** of critical notifications — not acknowledged after 5 min: sent again to everyone; after 10 more: to an SMS service of your choice
+- **Sources** — each notification is filed under its integration, found by itself from the automation that sends it (or given as an integration, an entity or a text); per source: name, icon, color, forced priority, people, duplicate delay, quiet hours ignored, or muted
+- **Captured notifications** (optional) — Home Assistant's persistent notifications and new repairs go through the hub too, filed under their integration
 - **Acknowledge** from the phone notification, the card or the panel: the notification is cleared on every phone
-- **Panel** (administrators) — journal with filters, people and channels, rules, settings and test buttons; a red badge on the sidebar entry while something waits for an acknowledgement; the top bar can be hidden (Settings tab), the tabs staying with the menu and the buttons
+- **Panel** (administrators) — journal with filters (by status or source), people and channels, rules, sources, settings and test buttons; a red badge on the sidebar entry while something waits for an acknowledgement; the top bar can be hidden (Settings tab), the tabs staying with the menu and the buttons
 - **Card** — today's figures and the latest notifications, with the Acknowledge button
 - Animated illustrated header (bell ringing when something critical waits), light and dark
 - **Sensors** — sent today, grouped, held, duplicates avoided, to acknowledge
@@ -88,14 +90,14 @@ data:
   title: "Water leak"
   priority: critical
   topic: leak_kitchen   # optional: what counts as the same notification for the duplicates
-  source: Safety        # optional: shown in the journal
+  source: Safety        # optional: an integration (hue), an entity or a text; found from the automation when left out
   people:               # optional: everyone when left out
     - person.alex
   url: /lovelace/home   # optional: opened when the notification is tapped
   data: {}              # optional: extra Companion app data, merged as is
 ```
 
-The action returns the journal entry (`id`, `status`, `people`), so a script can wait for the acknowledgement.
+The action returns the journal entry (`id`, `status`, `people`, `source`), so a script can wait for the acknowledgement.
 
 | Action | What it does |
 |---|---|
@@ -104,6 +106,32 @@ The action returns the journal entry (`id`, `status`, `people`), so a script can
 | `notify_hub.send_digest` | Sends the digest now; returns the number of notifications it grouped |
 
 Each notification also fires a `notify_hub_notification` event with its journal entry.
+
+### Sources
+
+Every notification is filed under a **source**, shown in the journal and on the card:
+
+- without `source`: the automation or script that called `notify_hub.send` is found, then the integration most of its entities belong to (helpers, templates and Home Assistant itself left aside) — a leak automation on ZHA sensors is filed under *Zigbee Home Automation*; an automation that only uses helpers is its own source
+- `source: hue` (a loaded integration), `source: binary_sensor.kitchen_leak` (its integration) or any text (`source: Safety`)
+
+Each source can be customized in the panel's **Sources** tab, or as YAML in **Configure → Sources** (keyed by the integration domain, `automation.<id>` or the slug of the text):
+
+```yaml
+hue:
+  name: Lights
+  icon: mdi:lightbulb      # Android notification icon, journal and card
+  color: "#f59e0b"         # Android notification accent, journal and card
+  priority: digest         # forced priority (critical, alert, info, digest)
+safety:
+  priority: critical
+  people: [person.alex]    # only these people (default: by priority and presence)
+  ignore_quiet: true       # alerts and infos go through the quiet hours
+  dedup_minutes: 0         # its own duplicate delay
+garden:
+  muted: true              # kept in the journal, sent to nobody
+```
+
+The same tab (or step) turns on the **captured notifications**: persistent notifications (the sidebar bell, as infos, filed under the integration their id starts with) and new repairs (an alert for an error, an info for a warning, opening Settings → Repairs). Both are off by default.
 
 ### Entities
 
@@ -149,6 +177,7 @@ Every option is in the visual editor.
 | Journal | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-journal.png" alt="Journal" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-journal-dark.png" alt="Journal, dark" width="400"> |
 | Routing | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-routing.png" alt="Routing" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-routing-dark.png" alt="Routing, dark" width="400"> |
 | Rules | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-rules.png" alt="Rules" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-rules-dark.png" alt="Rules, dark" width="400"> |
+| Sources | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-sources.png" alt="Sources" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-sources-dark.png" alt="Sources, dark" width="400"> |
 | Settings | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-settings.png" alt="Settings" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-settings-dark.png" alt="Settings, dark" width="400"> |
 
 ## How it works

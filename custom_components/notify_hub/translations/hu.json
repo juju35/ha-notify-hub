@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Notify Hub szabályok",
+        "description": "Válassza ki, mit módosít.",
+        "menu_options": {
+          "rules": "Szabályok: csendes órák, ismétlődések, összefoglalók, eszkaláció",
+          "sources": "Források: integrációnkénti szabályok, elfogott értesítések"
+        }
+      },
+      "rules": {
+        "title": "Notify Hub szabályok",
         "description": "A Notify Hub panelen is módosíthatók (Szabályok és Beállítások lapok).",
         "data": {
           "quiet_enabled": "Csendes órák",
@@ -36,7 +44,23 @@
           "sms_service": "SMS-t küldő notify szolgáltatás (pl. notify.free_mobile) az utolsó lépéshez.",
           "away_mode": "Ha senki sincs otthon, az infók mindenkihez mennek az összefoglaló helyett."
         }
+      },
+      "sources": {
+        "title": "Források",
+        "description": "Forrásonként egy szabály, integráció (pl. hue), automatizálás (automation.…) vagy szöveg szerint, bármelyikkel: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. A panel Források lapján is.",
+        "data": {
+          "sources": "Források szabályai",
+          "capture_persistent": "Állandó értesítések",
+          "capture_repairs": "Új javítások"
+        },
+        "data_description": {
+          "capture_persistent": "Az integrációk által a Home Assistantben közzétett értesítések (az oldalsáv csengője) is a hubon mennek át.",
+          "capture_repairs": "Minden új javítás is a hubon megy át: riasztás hiba, információ figyelmeztetés esetén."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Érvénytelen szabály: ellenőrizze a mezőket, a prioritást, az ikont (mdi:…) és a színt (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Forrás",
-          "description": "Forrás"
+          "description": "Integráció, entitás vagy szöveg, amely alatt az értesítés tárolódik (alapértelmezés: a hívó automatizálásból)."
         },
         "people": {
           "name": "Személyek",

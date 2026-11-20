@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Pravila Notify Hub",
+        "description": "Izberite, kaj spremeniti.",
+        "menu_options": {
+          "rules": "Pravila: tihe ure, dvojniki, povzetki, stopnjevanje",
+          "sources": "Viri: pravila po integraciji, ujeta obvestila"
+        }
+      },
+      "rules": {
+        "title": "Pravila Notify Hub",
         "description": "Spremenite jih lahko tudi na plošči Notify Hub (zavihka Pravila in Nastavitve).",
         "data": {
           "quiet_enabled": "Tihe ure",
@@ -36,7 +44,23 @@
           "sms_service": "Storitev notify, ki pošilja SMS (npr. notify.free_mobile), za zadnji korak.",
           "away_mode": "Ko ni nikogar doma, gredo informacije vsem namesto v povzetek."
         }
+      },
+      "sources": {
+        "title": "Viri",
+        "description": "Eno pravilo na vir, po integraciji (npr. hue), avtomatizaciji (automation.…) ali besedilu, s katerim koli od: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Tudi na zavihku Viri na plošči.",
+        "data": {
+          "sources": "Pravila virov",
+          "capture_persistent": "Trajna obvestila",
+          "capture_repairs": "Nova popravila"
+        },
+        "data_description": {
+          "capture_persistent": "Obvestila, ki jih integracije objavijo v Home Assistant (zvonec stranske vrstice), gredo tudi skozi vozlišče.",
+          "capture_repairs": "Vsako novo popravilo gre tudi skozi vozlišče: alarm za napako, informacija za opozorilo."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Neveljavno pravilo: preverite polja, prednost, ikono (mdi:…) in barvo (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Vir",
-          "description": "Vir"
+          "description": "Integracija, entiteta ali besedilo, pod katerim je obvestilo shranjeno (privzeto: iz klicoče avtomatizacije)."
         },
         "people": {
           "name": "Osebe",

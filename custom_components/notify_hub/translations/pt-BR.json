@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Regras do Notify Hub",
+        "description": "Escolha o que alterar.",
+        "menu_options": {
+          "rules": "Regras: horas de silêncio, duplicados, resumos, escalada",
+          "sources": "Origens: regras por integração, notificações captadas"
+        }
+      },
+      "rules": {
+        "title": "Regras do Notify Hub",
         "description": "Também editáveis no painel do Notify Hub (separadores Regras e Definições).",
         "data": {
           "quiet_enabled": "Horas de silêncio",
@@ -36,7 +44,23 @@
           "sms_service": "Serviço notify que envia SMS (ex. notify.free_mobile), para o último passo.",
           "away_mode": "Sem ninguém em casa, as infos vão para todos em vez de esperarem pelo resumo."
         }
+      },
+      "sources": {
+        "title": "Origens",
+        "description": "Uma regra por origem, pela sua integração (ex. hue), automatização (automation.…) ou texto, com qualquer de: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Também no separador Origens do painel.",
+        "data": {
+          "sources": "Regras por origem",
+          "capture_persistent": "Notificações persistentes",
+          "capture_repairs": "Novas reparações"
+        },
+        "data_description": {
+          "capture_persistent": "As notificações que as integrações publicam no Home Assistant (o sino da barra lateral) também passam pelo hub.",
+          "capture_repairs": "Cada nova reparação também passa pelo hub: um alerta para um erro, uma info para um aviso."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Regra inválida: verifique os campos, a prioridade, o ícone (mdi:…) e a cor (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Origem",
-          "description": "Origem"
+          "description": "Integração, entidade ou texto sob o qual a notificação é arquivada (por omissão: encontrado pela automatização que chama)."
         },
         "people": {
           "name": "Pessoas",

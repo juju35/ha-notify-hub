@@ -41,7 +41,9 @@ class NotifyHubSensor(SensorEntity):
         )
         if key == "pending":
             # The card's source: every change of the journal shows at once, kept out of the recorder.
-            self._unrecorded_attributes = frozenset({"recent", "counts", "quiet", "quiet_hours", "next_digest"})
+            self._unrecorded_attributes = frozenset(
+                {"recent", "counts", "quiet", "quiet_hours", "next_digest", "sources"}
+            )
 
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(self.hub.async_add_listener(self._update))

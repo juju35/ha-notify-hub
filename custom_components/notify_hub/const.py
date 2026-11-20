@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "notify_hub"
 TITLE: Final = "Notify Hub"
-VERSION: Final = "0.2.0"
+VERSION: Final = "0.3.0"
 
 # Priorities, from the most to the least urgent.
 PRIORITY_CRITICAL: Final = "critical"
@@ -25,6 +25,7 @@ STATUS_PENDING: Final = "pending"  # critical, waiting to be acknowledged
 STATUS_ACKNOWLEDGED: Final = "acknowledged"
 STATUS_NOBODY: Final = "nobody"  # no channel to send it to
 STATUS_FAILED: Final = "failed"
+STATUS_MUTED: Final = "muted"  # its source is muted: kept in the journal, sent to nobody
 
 # Options (entry options, edited in the panel's Rules and Settings tabs or the options flow).
 CONF_QUIET_START: Final = "quiet_start"
@@ -37,6 +38,11 @@ CONF_SMS_SERVICE: Final = "sms_service"
 CONF_AWAY_MODE: Final = "away_mode"
 CONF_PEOPLE: Final = "people"  # {person entity: [notify services]}: overrides the channels found
 CONF_RETENTION_DAYS: Final = "retention_days"
+# {source key: rule} — name, icon, color, priority, people, ignore_quiet, dedup_minutes, muted (see sources.py).
+CONF_SOURCES: Final = "sources"
+# The notifications other integrations raise in Home Assistant, sent through the hub too.
+CONF_CAPTURE_PERSISTENT: Final = "capture_persistent"  # persistent notifications (the bell of the sidebar)
+CONF_CAPTURE_REPAIRS: Final = "capture_repairs"  # new repairs (Settings → Repairs)
 # The panel's top bar: "off" (shown) or "all" (hidden, the tabs stay with the menu and the buttons).
 CONF_HIDE_HEADER: Final = "hide_header"
 HIDE_HEADER_MODES: Final = ("off", "all")

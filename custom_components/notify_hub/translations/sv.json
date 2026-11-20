@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Notify Hub-regler",
+        "description": "Välj vad som ska ändras.",
+        "menu_options": {
+          "rules": "Regler: tysta timmar, dubbletter, sammanfattningar, eskalering",
+          "sources": "Källor: regler per integration, fångade aviseringar"
+        }
+      },
+      "rules": {
+        "title": "Notify Hub-regler",
         "description": "Kan också ändras i Notify Hub-panelen (flikarna Regler och Inställningar).",
         "data": {
           "quiet_enabled": "Tysta timmar",
@@ -36,7 +44,23 @@
           "sms_service": "Notify-tjänst som skickar sms (t.ex. notify.free_mobile), för sista steget.",
           "away_mode": "Är ingen hemma går info till alla i stället för sammanfattningen."
         }
+      },
+      "sources": {
+        "title": "Källor",
+        "description": "En regel per källa, efter integration (t.ex. hue), automatisering (automation.…) eller text, med valfria fält: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Även på fliken Källor i panelen.",
+        "data": {
+          "sources": "Regler per källa",
+          "capture_persistent": "Beständiga aviseringar",
+          "capture_repairs": "Nya reparationer"
+        },
+        "data_description": {
+          "capture_persistent": "Aviseringarna som integrationer visar i Home Assistant (klockan i sidofältet) går också genom hubben.",
+          "capture_repairs": "Varje ny reparation går också genom hubben: ett larm för ett fel, en info för en varning."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Ogiltig regel: kontrollera fälten, prioriteten, ikonen (mdi:…) och färgen (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Källa",
-          "description": "Källa"
+          "description": "Integration, entitet eller text som aviseringen sparas under (standard: hittad från den anropande automatiseringen)."
         },
         "people": {
           "name": "Personer",

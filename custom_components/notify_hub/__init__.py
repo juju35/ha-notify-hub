@@ -73,8 +73,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             people=data.get(ATTR_PEOPLE),
             url=data.get(ATTR_URL),
             data=data.get(ATTR_DATA),
+            context=call.context,
         )
-        return {"id": entry["id"], "status": entry["status"], "people": entry["people"]}
+        return {
+            "id": entry["id"],
+            "status": entry["status"],
+            "people": entry["people"],
+            "source": entry["source_key"],
+        }
 
     async def acknowledge(call: ServiceCall) -> ServiceResponse:
         user = await hass.auth.async_get_user(call.context.user_id) if call.context.user_id else None
@@ -106,8 +112,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: NotifyHubConfigEntry) ->
 
 
 async def _async_options_updated(hass: HomeAssistant, entry: NotifyHubConfigEntry) -> None:
-    # The options are read live by the hub: the entities and the panel only need to show them.
-    entry.runtime_data._changed()
+    # The options are read live by the hub: the captures follow them, the entities and the panel show them.
+    entry.runtime_data.async_options_updated()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: NotifyHubConfigEntry) -> bool:

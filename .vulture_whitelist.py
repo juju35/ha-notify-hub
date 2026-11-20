@@ -16,3 +16,5 @@ _._unrecorded_attributes  # unused attribute (custom_components/notify_hub/senso
 _.async_added_to_hass  # unused method (custom_components/notify_hub/sensor.py:46)
 _.native_value  # unused property (custom_components/notify_hub/sensor.py:53)
 _.extra_state_attributes  # unused property (custom_components/notify_hub/sensor.py:57)
+_.async_step_rules  # unused method (custom_components/notify_hub/config_flow.py)
+_.async_step_sources  # unused method (custom_components/notify_hub/config_flow.py)

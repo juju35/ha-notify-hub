@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Reguły Notify Hub",
+        "description": "Wybierz, co zmienić.",
+        "menu_options": {
+          "rules": "Reguły: godziny ciszy, duplikaty, podsumowania, eskalacja",
+          "sources": "Źródła: reguły dla integracji, przechwycone powiadomienia"
+        }
+      },
+      "rules": {
+        "title": "Reguły Notify Hub",
         "description": "Można je też zmieniać w panelu Notify Hub (karty Reguły i Ustawienia).",
         "data": {
           "quiet_enabled": "Godziny ciszy",
@@ -36,7 +44,23 @@
           "sms_service": "Usługa notify wysyłająca SMS (np. notify.free_mobile), na ostatni krok.",
           "away_mode": "Gdy nikogo nie ma w domu, informacje trafiają do wszystkich zamiast do podsumowania."
         }
+      },
+      "sources": {
+        "title": "Źródła",
+        "description": "Jedna reguła na źródło, według integracji (np. hue), automatyzacji (automation.…) lub tekstu, z dowolnymi polami: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Także w karcie Źródła panelu.",
+        "data": {
+          "sources": "Reguły źródeł",
+          "capture_persistent": "Powiadomienia trwałe",
+          "capture_repairs": "Nowe naprawy"
+        },
+        "data_description": {
+          "capture_persistent": "Powiadomienia, które integracje publikują w Home Assistant (dzwonek paska bocznego), też przechodzą przez hub.",
+          "capture_repairs": "Każda nowa naprawa też przechodzi przez hub: alarm dla błędu, informacja dla ostrzeżenia."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Nieprawidłowa reguła: sprawdź pola, priorytet, ikonę (mdi:…) i kolor (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Źródło",
-          "description": "Źródło"
+          "description": "Integracja, encja lub tekst, pod którym zapisano powiadomienie (domyślnie: ustalone z wywołującej automatyzacji)."
         },
         "people": {
           "name": "Osoby",

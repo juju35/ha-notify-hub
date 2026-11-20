@@ -51,20 +51,46 @@ def _entry(n, minutes, title, message, status, priority="info", source="", peopl
         "message": message,
         "priority": priority,
         "source": source,
+        "source_key": source.lower().replace(" ", "_"),
         "people": list(people),
         "status": status,
     }
 
 
 RECENT = [
-    _entry(1, 3, "Washing machine", "The cycle is finished", "delivered", source="automation.laundry"),
-    _entry(2, 12, "Front door", "Left open for 10 minutes", "delivered", "alert", "automation.doors", ("Alex",)),
-    _entry(3, 25, "Bin day", "Recycling goes out tonight", "grouped", "digest", "automation.waste"),
-    _entry(4, 31, "Front door", "Left open for 10 minutes", "duplicate", "alert", "automation.doors", ()),
-    _entry(5, 48, "Dishwasher", "Program finished", "delivered", source="automation.kitchen"),
-    _entry(6, 95, "Battery low", "Hall motion sensor at 8 %", "grouped", "digest", "automation.batteries"),
+    _entry(1, 3, "Washing machine", "The cycle is finished", "delivered", source="Laundry"),
+    _entry(2, 12, "Front door", "Left open for 10 minutes", "delivered", "alert", "Doors", ("Alex",)),
+    _entry(3, 25, "Bin day", "Recycling goes out tonight", "grouped", "digest", "Waste"),
+    _entry(4, 31, "Front door", "Left open for 10 minutes", "duplicate", "alert", "Doors", ()),
+    _entry(5, 48, "Dishwasher", "Program finished", "delivered", source="Kitchen"),
+    _entry(6, 95, "Battery low", "Hall motion sensor at 8 %", "grouped", "digest", "Batteries"),
 ]
-ALARM = [_entry(0, 1, "Water leak", "Leak detected under the kitchen sink", "pending", "critical", "automation.leak")]
+ALARM = [_entry(0, 1, "Water leak", "Leak detected under the kitchen sink", "pending", "critical", "Safety")]
+
+
+def _source(name, count, minutes, rule=None, origins=()):
+    hour, minute = divmod(18 * 60 - minutes, 60)
+    return {
+        "key": name.lower(),
+        "name": name,
+        "domain": None,
+        "origins": list(origins),
+        "count": count,
+        "muted": count if (rule or {}).get("muted") else 0,
+        "last": f"2026-11-20T{hour:02d}:{minute:02d}:00+01:00",
+        "rule": rule or {},
+    }
+
+
+SOURCES = [
+    _source("Doors", 9, 12, {"color": "#f59e0b", "ignore_quiet": True}, ("Front door left open",)),
+    _source("Laundry", 6, 3, {"color": "#0ea5e9"}, ("Washing machine finished", "Dryer finished")),
+    _source("Batteries", 4, 95, {"priority": "digest"}, ("Low batteries",)),
+    _source("Safety", 2, 1, {"color": "#ef4444", "priority": "critical"}, ("Water leak",)),
+    _source("Garden", 2, 300, {"muted": True}, ("Rain sensor",)),
+    _source("Kitchen", 1, 48, None, ("Dishwasher finished",)),
+]
+LOOKS = {s["key"]: s for s in SOURCES}
 
 
 def summary(recent):
@@ -80,6 +106,10 @@ def summary(recent):
         "quiet_hours": ["22:00", "07:00"],
         "next_digest": "19:00",
         "recent": recent,
+        "sources": {
+            k: {"name": v["name"], "domain": None, "icon": None, "color": v["rule"].get("color")}
+            for k, v in LOOKS.items()
+        },
     }
 
 
@@ -118,12 +148,16 @@ PANEL_STATE = {
         "sms_service": "notify.sms_gateway",
         "away_mode": False,
         "retention_days": 7,
+        "capture_persistent": True,
+        "capture_repairs": False,
+        "sources": {s["key"]: s["rule"] for s in SOURCES if s["rule"]},
     },
+    "sources": SOURCES,
 }
 
 # Card shots: (file stem, journal) — the calm card and the one waiting for an acknowledgement.
 CARD_SHOTS = [("card", RECENT), ("card-alert", ALARM + RECENT[:3])]
-PANEL_SHOTS = ["journal", "routing", "rules", "settings"]
+PANEL_SHOTS = ["journal", "routing", "rules", "sources", "settings"]
 
 HA_CARD = """
 // Every animation, the ones inside shadow roots too (document.getAnimations() leaves those out).

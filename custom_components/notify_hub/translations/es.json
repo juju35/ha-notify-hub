@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Reglas de Notify Hub",
+        "description": "Elija qué cambiar.",
+        "menu_options": {
+          "rules": "Reglas: horas de silencio, duplicados, resúmenes, escalado",
+          "sources": "Orígenes: reglas por integración, notificaciones capturadas"
+        }
+      },
+      "rules": {
+        "title": "Reglas de Notify Hub",
         "description": "También editables en el panel de Notify Hub (pestañas Reglas y Ajustes).",
         "data": {
           "quiet_enabled": "Horas de silencio",
@@ -36,7 +44,23 @@
           "sms_service": "Servicio notify que envía SMS (p. ej. notify.free_mobile), para el último paso.",
           "away_mode": "Sin nadie en casa, las infos van a todos en lugar de esperar al resumen."
         }
+      },
+      "sources": {
+        "title": "Orígenes",
+        "description": "Una regla por origen, según su integración (p. ej. hue), automatización (automation.…) o texto, con cualquiera de: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. También en la pestaña Orígenes del panel.",
+        "data": {
+          "sources": "Reglas por origen",
+          "capture_persistent": "Notificaciones persistentes",
+          "capture_repairs": "Nuevas reparaciones"
+        },
+        "data_description": {
+          "capture_persistent": "Las notificaciones que las integraciones publican en Home Assistant (la campana de la barra lateral) también pasan por el hub.",
+          "capture_repairs": "Cada nueva reparación también pasa por el hub: una alerta para un error, una info para un aviso."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Regla no válida: revise los campos, la prioridad, el icono (mdi:…) y el color (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Origen",
-          "description": "Origen"
+          "description": "Integración, entidad o texto con el que se archiva la notificación (por defecto: tomado de la automatización que llama)."
         },
         "people": {
           "name": "Personas",

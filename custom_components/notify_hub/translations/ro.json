@@ -14,6 +14,14 @@
     "step": {
       "init": {
         "title": "Reguli Notify Hub",
+        "description": "Alegeți ce modificați.",
+        "menu_options": {
+          "rules": "Reguli: ore de liniște, duplicate, rezumate, escaladare",
+          "sources": "Surse: reguli pe integrare, notificări captate"
+        }
+      },
+      "rules": {
+        "title": "Reguli Notify Hub",
         "description": "Se pot modifica și în panoul Notify Hub (filele Reguli și Setări).",
         "data": {
           "quiet_enabled": "Ore de liniște",
@@ -36,7 +44,23 @@
           "sms_service": "Serviciu notify care trimite SMS (ex. notify.free_mobile), pentru ultimul pas.",
           "away_mode": "Când nu e nimeni acasă, informările merg la toți în loc să aștepte rezumatul."
         }
+      },
+      "sources": {
+        "title": "Surse",
+        "description": "O regulă pe sursă, după integrare (ex. hue), automatizare (automation.…) sau text, cu oricare dintre: name, icon (mdi:…), color (#rrggbb), priority, people, ignore_quiet, dedup_minutes, muted. Și în fila Surse a panoului.",
+        "data": {
+          "sources": "Reguli pe sursă",
+          "capture_persistent": "Notificări persistente",
+          "capture_repairs": "Reparații noi"
+        },
+        "data_description": {
+          "capture_persistent": "Notificările pe care integrările le publică în Home Assistant (clopoțelul barei laterale) trec și prin hub.",
+          "capture_repairs": "Fiecare reparație nouă trece și prin hub: o alertă pentru o eroare, o informare pentru un avertisment."
+        }
       }
+    },
+    "error": {
+      "invalid_sources": "Regulă invalidă: verificați câmpurile, prioritatea, pictograma (mdi:…) și culoarea (#rrggbb)."
     }
   },
   "entity": {
@@ -81,7 +105,7 @@
         },
         "source": {
           "name": "Sursă",
-          "description": "Sursă"
+          "description": "Integrarea, entitatea sau textul sub care e păstrată notificarea (implicit: găsit din automatizarea care apelează)."
         },
         "people": {
           "name": "Persoane",

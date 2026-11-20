@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 - 2026-11-21
+
+### Features
+
+- Sources: each notification is filed under its source — found by itself from the calling automation or script (the integration most of its entities belong to, helpers and templates left aside; the automation itself otherwise), or given to `notify_hub.send` as an integration domain, an entity id or a free text; the action returns it (`source`)
+- Per-source rules (panel's new **Sources** tab, or YAML in the options flow): name, icon, color, forced priority, people, duplicate delay, quiet hours ignored, muted (kept in the journal as `muted`, sent to nobody)
+- The source's icon and color go to the Android notifications (`notification_icon`, `color`); the journal and the card show the integration's logo (or the icon set), tinted with its color
+- Journal: click a source to show only its notifications
+- Capture (both off by default): Home Assistant's persistent notifications and new repairs go through the hub too, filed under their integration
+- Options flow: a menu between the rules and the sources
+
 ## 0.2.0 - 2026-11-20
 
 ### Features
