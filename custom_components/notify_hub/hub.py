@@ -454,7 +454,8 @@ class NotifyHub:
         return f"{local.date().isoformat()} {passed[-1].strftime('%H:%M')}" if passed else None
 
     async def async_send_digest(self) -> int:
-        """Send what waits for the digest as one message (everyone at home, else everyone); the number sent."""
+        """Send what waits for the digest as one message (everyone at home, else everyone); the number sent (0 when
+        nobody could be reached: they wait for the next digest)."""
         waiting = [e for e in reversed(self.journal) if e["status"] == STATUS_GROUPED]
         if not waiting:
             return 0
@@ -472,8 +473,15 @@ class NotifyHub:
         }
         targets = self._targets(None, present_only=True) or self._targets(None, present_only=False)
         await self._deliver(digest, targets)
+        if digest["status"] != STATUS_DELIVERED:
+            # Nobody reachable (no channel, or every channel failed): the notifications stay queued for the next
+            # digest instead of being lost as "nobody".
+            _LOGGER.warning(
+                "Notify Hub: nobody reachable for the digest, %s notifications kept for the next one", len(waiting)
+            )
+            return 0
         for entry in waiting:
-            entry["status"] = STATUS_DELIVERED if digest["status"] == STATUS_DELIVERED else digest["status"]
+            entry["status"] = STATUS_DELIVERED
             entry["people"] = digest["people"]
             entry["digest"] = dt_util.utcnow().isoformat()
         self._changed()

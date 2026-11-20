@@ -244,3 +244,20 @@ async def test_services_need_the_hub(hass: HomeAssistant, sent) -> None:
     await hass.async_block_till_done()
     with pytest.raises(ServiceValidationError):
         await send(hass, message="Nobody listens")
+
+
+async def test_digest_kept_when_nobody_is_reachable(hass: HomeAssistant, sent) -> None:
+    """A digest nobody can receive leaves its notifications queued for the next one."""
+    people(hass)
+    entry = await setup_hub(hass, **{CONF_PEOPLE: {"person.anne": ["notify.gone"], "person.ben": ["notify.gone"]}})
+    await send(hass, message="Battery low", priority="digest")
+    response = await hass.services.async_call(DOMAIN, "send_digest", {}, blocking=True, return_response=True)
+    assert response == {"sent": 0}
+    hub = entry.runtime_data
+    assert hub.journal[0]["status"] == "grouped" and hub.counts()["grouped"] == 1
+    # Reachable again: the next digest carries it.
+    hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_PEOPLE: {"person.anne": [ANNE]}})
+    await hass.async_block_till_done()
+    response = await hass.services.async_call(DOMAIN, "send_digest", {}, blocking=True, return_response=True)
+    assert response == {"sent": 1}
+    assert hub.journal[0]["status"] == "delivered" and "Battery low" in to(sent, ANNE)[0]["message"]
