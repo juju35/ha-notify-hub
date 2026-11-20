@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "One action for every notification of the house: routed by presence, quiet hours and priority."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notify Hub rules",
+        "description": "Also editable in the Notify Hub panel (Rules and Settings tabs).",
+        "data": {
+          "quiet_enabled": "Quiet hours",
+          "quiet_start": "Quiet hours start",
+          "quiet_end": "Quiet hours end",
+          "dedup_minutes": "Ignore duplicates for",
+          "digest_times": "Digest times",
+          "escalation_first": "Escalate after",
+          "escalation_second": "Then SMS after",
+          "sms_service": "SMS service",
+          "away_mode": "Away mode",
+          "retention_days": "Keep the journal"
+        },
+        "data_description": {
+          "quiet_enabled": "Alerts and infos wait for the end of the quiet hours; critical ones go through.",
+          "dedup_minutes": "A notification on the same topic within this time is not sent again (0: never ignored).",
+          "digest_times": "When the notifications waiting for the digest are sent, as one message.",
+          "escalation_first": "A critical notification nobody acknowledged goes again to everyone after this long.",
+          "escalation_second": "Then to the SMS service, this long after it was first sent.",
+          "sms_service": "Notify service that sends text messages (e.g. notify.free_mobile), for the last escalation step.",
+          "away_mode": "With nobody home, infos go to everyone instead of waiting for the digest."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Sent today"
+      },
+      "grouped": {
+        "name": "Waiting for the digest"
+      },
+      "held": {
+        "name": "Held by the quiet hours"
+      },
+      "duplicates": {
+        "name": "Duplicates avoided"
+      },
+      "pending": {
+        "name": "Critical to acknowledge"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Send",
+      "description": "Sends a notification through Notify Hub: routed by presence, quiet hours and priority.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "Text of the notification."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title"
+        },
+        "priority": {
+          "name": "Priority",
+          "description": "critical: everyone, through the quiet hours, until acknowledged; alert: people at home; info: people at home, or the digest; digest: the next digest."
+        },
+        "topic": {
+          "name": "Topic",
+          "description": "Two notifications on the same topic close together count as one (default: title and message)."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Source"
+        },
+        "people": {
+          "name": "People",
+          "description": "Only these people (default: by priority and presence)."
+        },
+        "url": {
+          "name": "Link",
+          "description": "Link"
+        },
+        "data": {
+          "name": "Data",
+          "description": "Extra data passed to the notify services (mobile app options)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Acknowledge",
+      "description": "Acknowledges a critical notification: no more escalation, cleared on the phones.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Notification id (default: every pending one)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Send the digest",
+      "description": "Sends now what waits for the digest."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Critical",
+        "alert": "Alert",
+        "info": "Info",
+        "digest": "Digest"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub is not loaded."
+    }
+  }
+}

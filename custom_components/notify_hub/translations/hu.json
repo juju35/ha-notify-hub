@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Egyetlen művelet a ház összes értesítéséhez: jelenlét, csendes órák és prioritás szerint."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "A Notify Hub már be van állítva."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notify Hub szabályok",
+        "description": "A Notify Hub panelen is módosíthatók (Szabályok és Beállítások lapok).",
+        "data": {
+          "quiet_enabled": "Csendes órák",
+          "quiet_start": "Csendes órák kezdete",
+          "quiet_end": "Csendes órák vége",
+          "dedup_minutes": "Ismétlődők figyelmen kívül hagyása",
+          "digest_times": "Összefoglaló időpontjai",
+          "escalation_first": "Újraküldés ennyi után",
+          "escalation_second": "Majd SMS ennyi után",
+          "sms_service": "SMS szolgáltatás",
+          "away_mode": "Távollét mód",
+          "retention_days": "Napló megőrzése"
+        },
+        "data_description": {
+          "quiet_enabled": "A riasztások és infók megvárják a csendes órák végét; a kritikusak átmennek.",
+          "dedup_minutes": "Az azonos témájú értesítés ezen időn belül nem megy ki újra (0: soha nem hagyja ki).",
+          "digest_times": "Mikor mennek ki a várakozó értesítések egy üzenetben.",
+          "escalation_first": "A nem nyugtázott kritikus értesítés ennyi idő után újra mindenkihez megy.",
+          "escalation_second": "Majd az SMS szolgáltatáshoz, ennyivel az első küldés után.",
+          "sms_service": "SMS-t küldő notify szolgáltatás (pl. notify.free_mobile) az utolsó lépéshez.",
+          "away_mode": "Ha senki sincs otthon, az infók mindenkihez mennek az összefoglaló helyett."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Ma elküldve"
+      },
+      "grouped": {
+        "name": "Összefoglalóra vár"
+      },
+      "held": {
+        "name": "Csendes órák miatt visszatartva"
+      },
+      "duplicates": {
+        "name": "Elkerült ismétlődők"
+      },
+      "pending": {
+        "name": "Nyugtázandó kritikus"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Küldés",
+      "description": "Értesítést küld a Notify Hubon át: jelenlét, csendes órák és prioritás szerint.",
+      "fields": {
+        "message": {
+          "name": "Üzenet",
+          "description": "Az értesítés szövege."
+        },
+        "title": {
+          "name": "Cím",
+          "description": "Cím"
+        },
+        "priority": {
+          "name": "Prioritás",
+          "description": "critical: mindenki, csendes órákban is, nyugtázásig; alert: az otthon lévők; info: az otthon lévők vagy az összefoglaló; digest: a következő összefoglaló."
+        },
+        "topic": {
+          "name": "Téma",
+          "description": "Két közeli, azonos témájú értesítés egynek számít (alapból: cím és üzenet)."
+        },
+        "source": {
+          "name": "Forrás",
+          "description": "Forrás"
+        },
+        "people": {
+          "name": "Személyek",
+          "description": "Csak ezek a személyek (alapból: prioritás és jelenlét szerint)."
+        },
+        "url": {
+          "name": "Hivatkozás",
+          "description": "Hivatkozás"
+        },
+        "data": {
+          "name": "Adatok",
+          "description": "További adatok a notify szolgáltatásoknak (mobilalkalmazás beállításai)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Nyugtázás",
+      "description": "Nyugtáz egy kritikus értesítést: nincs több újraküldés, törlődik a telefonokról.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Az értesítés azonosítója (alapból: az összes várakozó)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Összefoglaló küldése",
+      "description": "Most elküldi, ami az összefoglalóra vár."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritikus",
+        "alert": "Riasztás",
+        "info": "Info",
+        "digest": "Összefoglaló"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "A Notify Hub nincs betöltve."
+    }
+  }
+}

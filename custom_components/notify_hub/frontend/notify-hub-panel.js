@@ -1,0 +1,469 @@
+/**
+ * notify-hub-panel — Notify Hub's sidebar panel (administrators): the journal of the notifications, the people and
+ * their channels, the rules (priorities, quiet hours, duplicates, digests) and the settings (escalation, SMS,
+ * journal, tests). Talks to the integration over its WebSocket commands (notify_hub/state, /save, /acknowledge,
+ * /test, /digest). Its layout follows the other ha-* panels: an illustrated header across the whole width, the tabs
+ * under it, the current tab in the address.
+ * https://github.com/juju35/ha-notify-hub
+ */
+var NOTIFY_HUB_PANEL_VERSION = '0.1.0';
+
+var NH_PANEL_I18N = {
+  en: { tab_journal: "Journal", tab_routing: "Routing", tab_rules: "Rules", tab_settings: "Settings", c_sent: "Sent today", c_grouped: "In the digest", c_duplicates: "Duplicates avoided (7 d)", c_pending: "Critical to acknowledge", c_held: "Held by the quiet hours", f_all: "All", f_critical: "Critical", f_pending: "To acknowledge", f_grouped: "In the digest", f_held: "Held", f_duplicate: "Duplicates", col_message: "Message", col_source: "Source", col_people: "People", col_time: "Time", col_status: "Status", empty: "No notification", people: "People and channels", home: "Home", away: "Away", channels: "Channels", found: "Found automatically", custom: "Set by hand", reset: "Back to automatic", no_channel: "No channel", no_people: "No person in Home Assistant", escalation: "Escalation of the critical ones", escalation_text: "The people concerned, then everyone after {a} min, then the SMS service after {b} min. Stops as soon as someone acknowledges.", rules_priorities: "Priorities", p_critical: "Immediately, through the quiet hours, critical sound, until acknowledged", p_alert: "The people at home (everyone when nobody is), held during the quiet hours", p_info: "The people at home, held during the quiet hours; with nobody home, the next digest", p_digest: "Always grouped, sent at the digest times", quiet: "Quiet hours", quiet_start: "Start", quiet_end: "End", dedup: "Ignore duplicates for", dedup_text: "Same topic (or same title and message) within this time", digest_times: "Digest times", add_time: "Add", away_mode: "Away mode", away_text: "With nobody home, infos go to everyone instead of the digest", sms: "SMS service", sms_none: "None", esc_first: "Again to everyone after", esc_second: "SMS after", retention: "Keep the journal", days: "days", minutes: "min", test: "Send a test", test_info: "Info test", test_critical: "Critical test", digest_now: "Send the digest now", save: "Save", saved: "Saved", sent_ok: "Sent", error: "Error", subtitle_quiet: "Quiet hours until {t}", subtitle_ok: "{n} sent today", acknowledge_all: "Acknowledge all" },
+  fr: { tab_journal: "Journal", tab_routing: "Routage", tab_rules: "Règles", tab_settings: "Réglages", c_sent: "Envoyées aujourd’hui", c_grouped: "Dans le résumé", c_duplicates: "Doublons évités (7 j)", c_pending: "Critiques à acquitter", c_held: "Retenues (heures calmes)", f_all: "Toutes", f_critical: "Critiques", f_pending: "À acquitter", f_grouped: "Dans le résumé", f_held: "Retenues", f_duplicate: "Doublons", col_message: "Message", col_source: "Source", col_people: "Destinataires", col_time: "Heure", col_status: "État", empty: "Aucune notification", people: "Personnes et canaux", home: "Présent", away: "Absent", channels: "Canaux", found: "Trouvés automatiquement", custom: "Réglés à la main", reset: "Revenir en automatique", no_channel: "Aucun canal", no_people: "Aucune personne dans Home Assistant", escalation: "Relance des critiques", escalation_text: "Les personnes concernées, puis tout le monde après {a} min, puis le service SMS après {b} min. S’arrête dès qu’une personne acquitte.", rules_priorities: "Priorités", p_critical: "Immédiat, même en heures calmes, son critique, jusqu’à l’acquittement", p_alert: "Les présents (tout le monde si personne n’est là), retenue en heures calmes", p_info: "Les présents, retenue en heures calmes ; personne à la maison : le prochain résumé", p_digest: "Toujours regroupée, envoyée aux heures des résumés", quiet: "Heures calmes", quiet_start: "Début", quiet_end: "Fin", dedup: "Ignorer les doublons pendant", dedup_text: "Même sujet (ou même titre et message) dans ce délai", digest_times: "Heures des résumés", add_time: "Ajouter", away_mode: "Mode absence", away_text: "Personne à la maison : les infos partent à tout le monde au lieu du résumé", sms: "Service SMS", sms_none: "Aucun", esc_first: "De nouveau à tous après", esc_second: "SMS après", retention: "Garder le journal", days: "jours", minutes: "min", test: "Envoyer un test", test_info: "Test info", test_critical: "Test critique", digest_now: "Envoyer le résumé maintenant", save: "Enregistrer", saved: "Enregistré", sent_ok: "Envoyé", error: "Erreur", subtitle_quiet: "Heures calmes jusqu’à {t}", subtitle_ok: "{n} envoyées aujourd’hui", acknowledge_all: "Tout acquitter" },
+  de: { tab_journal: "Journal", tab_routing: "Verteilung", tab_rules: "Regeln", tab_settings: "Einstellungen", c_sent: "Heute gesendet", c_grouped: "In der Zusammenfassung", c_duplicates: "Vermiedene Duplikate (7 T.)", c_pending: "Zu bestätigende kritische", c_held: "Durch Ruhezeit zurückgehalten", f_all: "Alle", f_critical: "Kritisch", f_pending: "Zu bestätigen", f_grouped: "In der Zusammenfassung", f_held: "Zurückgehalten", f_duplicate: "Duplikate", col_message: "Nachricht", col_source: "Quelle", col_people: "Personen", col_time: "Zeit", col_status: "Status", empty: "Keine Benachrichtigung", people: "Personen und Kanäle", home: "Zu Hause", away: "Abwesend", channels: "Kanäle", found: "Automatisch gefunden", custom: "Manuell festgelegt", reset: "Zurück zu automatisch", no_channel: "Kein Kanal", no_people: "Keine Person in Home Assistant", escalation: "Eskalation der kritischen", escalation_text: "Die betroffenen Personen, dann alle nach {a} Min., dann der SMS-Dienst nach {b} Min. Endet, sobald jemand bestätigt.", rules_priorities: "Prioritäten", p_critical: "Sofort, auch in der Ruhezeit, kritischer Ton, bis zur Bestätigung", p_alert: "Anwesende (alle, wenn niemand da ist), in der Ruhezeit zurückgehalten", p_info: "Anwesende, in der Ruhezeit zurückgehalten; niemand zu Hause: nächste Zusammenfassung", p_digest: "Immer gruppiert, zu den Zeiten der Zusammenfassung gesendet", quiet: "Ruhezeiten", quiet_start: "Beginn", quiet_end: "Ende", dedup: "Duplikate ignorieren für", dedup_text: "Gleiches Thema (oder gleicher Titel und Text) in dieser Zeit", digest_times: "Zeiten der Zusammenfassung", add_time: "Hinzufügen", away_mode: "Abwesenheitsmodus", away_text: "Niemand zu Hause: Infos gehen an alle statt in die Zusammenfassung", sms: "SMS-Dienst", sms_none: "Keiner", esc_first: "Erneut an alle nach", esc_second: "SMS nach", retention: "Journal behalten", days: "Tage", minutes: "Min.", test: "Test senden", test_info: "Info-Test", test_critical: "Kritischer Test", digest_now: "Zusammenfassung jetzt senden", save: "Speichern", saved: "Gespeichert", sent_ok: "Gesendet", error: "Fehler", subtitle_quiet: "Ruhezeit bis {t}", subtitle_ok: "{n} heute gesendet", acknowledge_all: "Alle bestätigen" },
+  es: { tab_journal: "Registro", tab_routing: "Enrutado", tab_rules: "Reglas", tab_settings: "Ajustes", c_sent: "Enviadas hoy", c_grouped: "En el resumen", c_duplicates: "Duplicados evitados (7 d)", c_pending: "Críticas por confirmar", c_held: "Retenidas por el silencio", f_all: "Todas", f_critical: "Críticas", f_pending: "Por confirmar", f_grouped: "En el resumen", f_held: "Retenidas", f_duplicate: "Duplicados", col_message: "Mensaje", col_source: "Origen", col_people: "Personas", col_time: "Hora", col_status: "Estado", empty: "Sin notificaciones", people: "Personas y canales", home: "En casa", away: "Fuera", channels: "Canales", found: "Encontrados automáticamente", custom: "Fijados a mano", reset: "Volver a automático", no_channel: "Sin canal", no_people: "No hay personas en Home Assistant", escalation: "Escalado de las críticas", escalation_text: "Las personas afectadas, luego todos tras {a} min, luego el servicio SMS tras {b} min. Se detiene en cuanto alguien confirma.", rules_priorities: "Prioridades", p_critical: "Inmediato, incluso en silencio, sonido crítico, hasta confirmar", p_alert: "Los presentes (todos si no hay nadie), retenida en silencio", p_info: "Los presentes, retenida en silencio; sin nadie en casa: el próximo resumen", p_digest: "Siempre agrupada, enviada a las horas del resumen", quiet: "Horas de silencio", quiet_start: "Inicio", quiet_end: "Fin", dedup: "Ignorar duplicados durante", dedup_text: "Mismo tema (o mismo título y mensaje) en este plazo", digest_times: "Horas del resumen", add_time: "Añadir", away_mode: "Modo ausencia", away_text: "Sin nadie en casa: las infos van a todos en vez de al resumen", sms: "Servicio SMS", sms_none: "Ninguno", esc_first: "De nuevo a todos tras", esc_second: "SMS tras", retention: "Conservar el registro", days: "días", minutes: "min", test: "Enviar una prueba", test_info: "Prueba info", test_critical: "Prueba crítica", digest_now: "Enviar el resumen ahora", save: "Guardar", saved: "Guardado", sent_ok: "Enviado", error: "Error", subtitle_quiet: "Silencio hasta las {t}", subtitle_ok: "{n} enviadas hoy", acknowledge_all: "Confirmar todas" },
+  it: { tab_journal: "Registro", tab_routing: "Instradamento", tab_rules: "Regole", tab_settings: "Impostazioni", c_sent: "Inviate oggi", c_grouped: "Nel riepilogo", c_duplicates: "Duplicati evitati (7 g)", c_pending: "Critiche da confermare", c_held: "Trattenute dal silenzio", f_all: "Tutte", f_critical: "Critiche", f_pending: "Da confermare", f_grouped: "Nel riepilogo", f_held: "Trattenute", f_duplicate: "Duplicati", col_message: "Messaggio", col_source: "Origine", col_people: "Persone", col_time: "Ora", col_status: "Stato", empty: "Nessuna notifica", people: "Persone e canali", home: "In casa", away: "Fuori", channels: "Canali", found: "Trovati automaticamente", custom: "Impostati a mano", reset: "Torna all’automatico", no_channel: "Nessun canale", no_people: "Nessuna persona in Home Assistant", escalation: "Escalation delle critiche", escalation_text: "Le persone interessate, poi tutti dopo {a} min, poi il servizio SMS dopo {b} min. Si ferma appena qualcuno conferma.", rules_priorities: "Priorità", p_critical: "Subito, anche nel silenzio, suono critico, fino alla conferma", p_alert: "I presenti (tutti se non c’è nessuno), trattenuta nel silenzio", p_info: "I presenti, trattenuta nel silenzio; nessuno in casa: il prossimo riepilogo", p_digest: "Sempre raggruppata, inviata agli orari del riepilogo", quiet: "Ore di silenzio", quiet_start: "Inizio", quiet_end: "Fine", dedup: "Ignora i duplicati per", dedup_text: "Stesso argomento (o stesso titolo e messaggio) in questo tempo", digest_times: "Orari del riepilogo", add_time: "Aggiungi", away_mode: "Modalità assenza", away_text: "Nessuno in casa: le info vanno a tutti invece che al riepilogo", sms: "Servizio SMS", sms_none: "Nessuno", esc_first: "Di nuovo a tutti dopo", esc_second: "SMS dopo", retention: "Conserva il registro", days: "giorni", minutes: "min", test: "Invia un test", test_info: "Test info", test_critical: "Test critico", digest_now: "Invia il riepilogo ora", save: "Salva", saved: "Salvato", sent_ok: "Inviato", error: "Errore", subtitle_quiet: "Silenzio fino alle {t}", subtitle_ok: "{n} inviate oggi", acknowledge_all: "Conferma tutte" },
+  nl: { tab_journal: "Logboek", tab_routing: "Routering", tab_rules: "Regels", tab_settings: "Instellingen", c_sent: "Vandaag verstuurd", c_grouped: "In het overzicht", c_duplicates: "Dubbele vermeden (7 d)", c_pending: "Kritiek te bevestigen", c_held: "Vastgehouden (stille uren)", f_all: "Alle", f_critical: "Kritiek", f_pending: "Te bevestigen", f_grouped: "In het overzicht", f_held: "Vastgehouden", f_duplicate: "Dubbel", col_message: "Bericht", col_source: "Bron", col_people: "Personen", col_time: "Tijd", col_status: "Status", empty: "Geen meldingen", people: "Personen en kanalen", home: "Thuis", away: "Afwezig", channels: "Kanalen", found: "Automatisch gevonden", custom: "Handmatig ingesteld", reset: "Terug naar automatisch", no_channel: "Geen kanaal", no_people: "Geen personen in Home Assistant", escalation: "Escalatie van kritieke", escalation_text: "De betrokken personen, dan iedereen na {a} min, dan de sms-dienst na {b} min. Stopt zodra iemand bevestigt.", rules_priorities: "Prioriteiten", p_critical: "Direct, ook in stille uren, kritiek geluid, tot bevestiging", p_alert: "Aanwezigen (iedereen als niemand thuis is), vastgehouden in stille uren", p_info: "Aanwezigen, vastgehouden in stille uren; niemand thuis: volgend overzicht", p_digest: "Altijd gegroepeerd, verstuurd op de tijden van het overzicht", quiet: "Stille uren", quiet_start: "Begin", quiet_end: "Einde", dedup: "Dubbele negeren gedurende", dedup_text: "Zelfde onderwerp (of titel en bericht) binnen deze tijd", digest_times: "Tijden van het overzicht", add_time: "Toevoegen", away_mode: "Afwezigheidsmodus", away_text: "Niemand thuis: info gaat naar iedereen in plaats van het overzicht", sms: "Sms-dienst", sms_none: "Geen", esc_first: "Opnieuw naar iedereen na", esc_second: "Sms na", retention: "Logboek bewaren", days: "dagen", minutes: "min", test: "Test versturen", test_info: "Infotest", test_critical: "Kritieke test", digest_now: "Overzicht nu versturen", save: "Opslaan", saved: "Opgeslagen", sent_ok: "Verstuurd", error: "Fout", subtitle_quiet: "Stil tot {t}", subtitle_ok: "{n} vandaag verstuurd", acknowledge_all: "Alles bevestigen" },
+  pt: { tab_journal: "Registo", tab_routing: "Encaminhamento", tab_rules: "Regras", tab_settings: "Definições", c_sent: "Enviadas hoje", c_grouped: "No resumo", c_duplicates: "Duplicados evitados (7 d)", c_pending: "Críticas por confirmar", c_held: "Retidas pelo silêncio", f_all: "Todas", f_critical: "Críticas", f_pending: "Por confirmar", f_grouped: "No resumo", f_held: "Retidas", f_duplicate: "Duplicados", col_message: "Mensagem", col_source: "Origem", col_people: "Pessoas", col_time: "Hora", col_status: "Estado", empty: "Sem notificações", people: "Pessoas e canais", home: "Em casa", away: "Fora", channels: "Canais", found: "Encontrados automaticamente", custom: "Definidos à mão", reset: "Voltar ao automático", no_channel: "Sem canal", no_people: "Sem pessoas no Home Assistant", escalation: "Escalada das críticas", escalation_text: "As pessoas visadas, depois todos após {a} min, depois o serviço SMS após {b} min. Para assim que alguém confirma.", rules_priorities: "Prioridades", p_critical: "Imediato, mesmo em silêncio, som crítico, até confirmar", p_alert: "Os presentes (todos se não estiver ninguém), retida em silêncio", p_info: "Os presentes, retida em silêncio; ninguém em casa: o próximo resumo", p_digest: "Sempre agrupada, enviada às horas do resumo", quiet: "Horas de silêncio", quiet_start: "Início", quiet_end: "Fim", dedup: "Ignorar duplicados durante", dedup_text: "Mesmo tema (ou mesmo título e mensagem) dentro deste tempo", digest_times: "Horas do resumo", add_time: "Adicionar", away_mode: "Modo ausência", away_text: "Ninguém em casa: as infos vão para todos em vez do resumo", sms: "Serviço SMS", sms_none: "Nenhum", esc_first: "De novo a todos após", esc_second: "SMS após", retention: "Manter o registo", days: "dias", minutes: "min", test: "Enviar um teste", test_info: "Teste info", test_critical: "Teste crítico", digest_now: "Enviar o resumo agora", save: "Guardar", saved: "Guardado", sent_ok: "Enviado", error: "Erro", subtitle_quiet: "Silêncio até às {t}", subtitle_ok: "{n} enviadas hoje", acknowledge_all: "Confirmar todas" },
+  pl: { tab_journal: "Dziennik", tab_routing: "Kierowanie", tab_rules: "Reguły", tab_settings: "Ustawienia", c_sent: "Wysłane dziś", c_grouped: "W podsumowaniu", c_duplicates: "Uniknięte duplikaty (7 dni)", c_pending: "Krytyczne do potwierdzenia", c_held: "Wstrzymane przez ciszę", f_all: "Wszystkie", f_critical: "Krytyczne", f_pending: "Do potwierdzenia", f_grouped: "W podsumowaniu", f_held: "Wstrzymane", f_duplicate: "Duplikaty", col_message: "Wiadomość", col_source: "Źródło", col_people: "Osoby", col_time: "Czas", col_status: "Stan", empty: "Brak powiadomień", people: "Osoby i kanały", home: "W domu", away: "Poza domem", channels: "Kanały", found: "Znalezione automatycznie", custom: "Ustawione ręcznie", reset: "Wróć do automatycznych", no_channel: "Brak kanału", no_people: "Brak osób w Home Assistant", escalation: "Eskalacja krytycznych", escalation_text: "Zainteresowane osoby, potem wszyscy po {a} min, potem usługa SMS po {b} min. Kończy się, gdy ktoś potwierdzi.", rules_priorities: "Priorytety", p_critical: "Natychmiast, także w ciszy, dźwięk krytyczny, do potwierdzenia", p_alert: "Obecni (wszyscy, gdy nikogo nie ma), wstrzymane w ciszy", p_info: "Obecni, wstrzymane w ciszy; nikogo w domu: następne podsumowanie", p_digest: "Zawsze grupowane, wysyłane w godzinach podsumowania", quiet: "Godziny ciszy", quiet_start: "Początek", quiet_end: "Koniec", dedup: "Ignoruj duplikaty przez", dedup_text: "Ten sam temat (lub tytuł i treść) w tym czasie", digest_times: "Godziny podsumowania", add_time: "Dodaj", away_mode: "Tryb nieobecności", away_text: "Nikogo w domu: informacje trafiają do wszystkich zamiast do podsumowania", sms: "Usługa SMS", sms_none: "Brak", esc_first: "Ponownie do wszystkich po", esc_second: "SMS po", retention: "Przechowuj dziennik", days: "dni", minutes: "min", test: "Wyślij test", test_info: "Test informacji", test_critical: "Test krytyczny", digest_now: "Wyślij podsumowanie teraz", save: "Zapisz", saved: "Zapisano", sent_ok: "Wysłano", error: "Błąd", subtitle_quiet: "Cisza do {t}", subtitle_ok: "Wysłane dziś: {n}", acknowledge_all: "Potwierdź wszystkie" },
+  sr: { tab_journal: "Дневник", tab_routing: "Усмеравање", tab_rules: "Правила", tab_settings: "Подешавања", c_sent: "Послато данас", c_grouped: "У прегледу", c_duplicates: "Избегнути дупликати (7 д)", c_pending: "Критична за потврду", c_held: "Задржано тихим сатима", f_all: "Сва", f_critical: "Критична", f_pending: "За потврду", f_grouped: "У прегледу", f_held: "Задржана", f_duplicate: "Дупликати", col_message: "Порука", col_source: "Извор", col_people: "Особе", col_time: "Време", col_status: "Стање", empty: "Нема обавештења", people: "Особе и канали", home: "Код куће", away: "Одсутан", channels: "Канали", found: "Пронађени аутоматски", custom: "Подешени ручно", reset: "Назад на аутоматски", no_channel: "Нема канала", no_people: "Нема особа у Home Assistant", escalation: "Понављање критичних", escalation_text: "Особе на које се односи, затим сви после {a} мин, затим СМС услуга после {b} мин. Стаје чим неко потврди.", rules_priorities: "Приоритети", p_critical: "Одмах, и у тихим сатима, критичан звук, до потврде", p_alert: "Присутни (сви ако нико није ту), задржано у тихим сатима", p_info: "Присутни, задржано у тихим сатима; нико код куће: следећи преглед", p_digest: "Увек груписано, шаље се у времена прегледа", quiet: "Тихи сати", quiet_start: "Почетак", quiet_end: "Крај", dedup: "Занемари дупликате током", dedup_text: "Иста тема (или исти наслов и порука) у овом року", digest_times: "Времена прегледа", add_time: "Додај", away_mode: "Режим одсуства", away_text: "Нико код куће: информације иду свима уместо у преглед", sms: "СМС услуга", sms_none: "Ниједна", esc_first: "Поново свима после", esc_second: "СМС после", retention: "Чувај дневник", days: "дана", minutes: "мин", test: "Пошаљи пробу", test_info: "Проба информације", test_critical: "Критична проба", digest_now: "Пошаљи преглед сада", save: "Сачувај", saved: "Сачувано", sent_ok: "Послато", error: "Грешка", subtitle_quiet: "Тихи сати до {t}", subtitle_ok: "Послато данас: {n}", acknowledge_all: "Потврди сва" },
+  "sr-Latn": { tab_journal: "Dnevnik", tab_routing: "Usmeravanje", tab_rules: "Pravila", tab_settings: "Podešavanja", c_sent: "Poslato danas", c_grouped: "U pregledu", c_duplicates: "Izbegnuti duplikati (7 d)", c_pending: "Kritična za potvrdu", c_held: "Zadržano tihim satima", f_all: "Sva", f_critical: "Kritična", f_pending: "Za potvrdu", f_grouped: "U pregledu", f_held: "Zadržana", f_duplicate: "Duplikati", col_message: "Poruka", col_source: "Izvor", col_people: "Osobe", col_time: "Vreme", col_status: "Stanje", empty: "Nema obaveštenja", people: "Osobe i kanali", home: "Kod kuće", away: "Odsutan", channels: "Kanali", found: "Pronađeni automatski", custom: "Podešeni ručno", reset: "Nazad na automatski", no_channel: "Nema kanala", no_people: "Nema osoba u Home Assistant", escalation: "Ponavljanje kritičnih", escalation_text: "Osobe na koje se odnosi, zatim svi posle {a} min, zatim SMS usluga posle {b} min. Staje čim neko potvrdi.", rules_priorities: "Prioriteti", p_critical: "Odmah, i u tihim satima, kritičan zvuk, do potvrde", p_alert: "Prisutni (svi ako niko nije tu), zadržano u tihim satima", p_info: "Prisutni, zadržano u tihim satima; niko kod kuće: sledeći pregled", p_digest: "Uvek grupisano, šalje se u vremena pregleda", quiet: "Tihi sati", quiet_start: "Početak", quiet_end: "Kraj", dedup: "Zanemari duplikate tokom", dedup_text: "Ista tema (ili isti naslov i poruka) u ovom roku", digest_times: "Vremena pregleda", add_time: "Dodaj", away_mode: "Režim odsustva", away_text: "Niko kod kuće: informacije idu svima umesto u pregled", sms: "SMS usluga", sms_none: "Nijedna", esc_first: "Ponovo svima posle", esc_second: "SMS posle", retention: "Čuvaj dnevnik", days: "dana", minutes: "min", test: "Pošalji probu", test_info: "Proba informacije", test_critical: "Kritična proba", digest_now: "Pošalji pregled sada", save: "Sačuvaj", saved: "Sačuvano", sent_ok: "Poslato", error: "Greška", subtitle_quiet: "Tihi sati do {t}", subtitle_ok: "Poslato danas: {n}", acknowledge_all: "Potvrdi sva" },
+  ro: { tab_journal: "Jurnal", tab_routing: "Direcționare", tab_rules: "Reguli", tab_settings: "Setări", c_sent: "Trimise azi", c_grouped: "În rezumat", c_duplicates: "Duplicate evitate (7 z)", c_pending: "Critice de confirmat", c_held: "Reținute de liniște", f_all: "Toate", f_critical: "Critice", f_pending: "De confirmat", f_grouped: "În rezumat", f_held: "Reținute", f_duplicate: "Duplicate", col_message: "Mesaj", col_source: "Sursă", col_people: "Persoane", col_time: "Ora", col_status: "Stare", empty: "Nicio notificare", people: "Persoane și canale", home: "Acasă", away: "Plecat", channels: "Canale", found: "Găsite automat", custom: "Setate manual", reset: "Înapoi la automat", no_channel: "Niciun canal", no_people: "Nicio persoană în Home Assistant", escalation: "Escaladarea celor critice", escalation_text: "Persoanele vizate, apoi toți după {a} min, apoi serviciul SMS după {b} min. Se oprește când cineva confirmă.", rules_priorities: "Priorități", p_critical: "Imediat, chiar și în liniște, sunet critic, până la confirmare", p_alert: "Cei prezenți (toți dacă nu e nimeni), reținută în liniște", p_info: "Cei prezenți, reținută în liniște; nimeni acasă: următorul rezumat", p_digest: "Mereu grupată, trimisă la orele rezumatului", quiet: "Ore de liniște", quiet_start: "Început", quiet_end: "Sfârșit", dedup: "Ignoră duplicatele timp de", dedup_text: "Același subiect (sau același titlu și mesaj) în acest interval", digest_times: "Orele rezumatului", add_time: "Adaugă", away_mode: "Mod absență", away_text: "Nimeni acasă: informările merg la toți în loc de rezumat", sms: "Serviciu SMS", sms_none: "Niciunul", esc_first: "Din nou la toți după", esc_second: "SMS după", retention: "Păstrează jurnalul", days: "zile", minutes: "min", test: "Trimite un test", test_info: "Test informare", test_critical: "Test critic", digest_now: "Trimite rezumatul acum", save: "Salvează", saved: "Salvat", sent_ok: "Trimis", error: "Eroare", subtitle_quiet: "Liniște până la {t}", subtitle_ok: "Trimise azi: {n}", acknowledge_all: "Confirmă toate" },
+  da: { tab_journal: "Journal", tab_routing: "Routing", tab_rules: "Regler", tab_settings: "Indstillinger", c_sent: "Sendt i dag", c_grouped: "I oversigten", c_duplicates: "Undgåede dubletter (7 d)", c_pending: "Kritiske at bekræfte", c_held: "Holdt tilbage (stille timer)", f_all: "Alle", f_critical: "Kritiske", f_pending: "Skal bekræftes", f_grouped: "I oversigten", f_held: "Holdt tilbage", f_duplicate: "Dubletter", col_message: "Besked", col_source: "Kilde", col_people: "Personer", col_time: "Tid", col_status: "Status", empty: "Ingen notifikationer", people: "Personer og kanaler", home: "Hjemme", away: "Ude", channels: "Kanaler", found: "Fundet automatisk", custom: "Sat manuelt", reset: "Tilbage til automatisk", no_channel: "Ingen kanal", no_people: "Ingen personer i Home Assistant", escalation: "Eskalering af kritiske", escalation_text: "De berørte personer, så alle efter {a} min, så sms-tjenesten efter {b} min. Stopper, så snart nogen bekræfter.", rules_priorities: "Prioriteter", p_critical: "Straks, også i stille timer, kritisk lyd, indtil bekræftet", p_alert: "De hjemme (alle når ingen er hjemme), holdt tilbage i stille timer", p_info: "De hjemme, holdt tilbage i stille timer; ingen hjemme: næste oversigt", p_digest: "Altid grupperet, sendt på oversigtens tidspunkter", quiet: "Stille timer", quiet_start: "Start", quiet_end: "Slut", dedup: "Ignorer dubletter i", dedup_text: "Samme emne (eller titel og besked) inden for denne tid", digest_times: "Tidspunkter for oversigten", add_time: "Tilføj", away_mode: "Fraværstilstand", away_text: "Ingen hjemme: info går til alle i stedet for oversigten", sms: "Sms-tjeneste", sms_none: "Ingen", esc_first: "Igen til alle efter", esc_second: "Sms efter", retention: "Behold journalen", days: "dage", minutes: "min", test: "Send en test", test_info: "Infotest", test_critical: "Kritisk test", digest_now: "Send oversigten nu", save: "Gem", saved: "Gemt", sent_ok: "Sendt", error: "Fejl", subtitle_quiet: "Stille til {t}", subtitle_ok: "{n} sendt i dag", acknowledge_all: "Bekræft alle" },
+  sv: { tab_journal: "Logg", tab_routing: "Dirigering", tab_rules: "Regler", tab_settings: "Inställningar", c_sent: "Skickade i dag", c_grouped: "I sammanfattningen", c_duplicates: "Undvikna dubbletter (7 d)", c_pending: "Kritiska att bekräfta", c_held: "Hållna (tysta timmar)", f_all: "Alla", f_critical: "Kritiska", f_pending: "Att bekräfta", f_grouped: "I sammanfattningen", f_held: "Hållna", f_duplicate: "Dubbletter", col_message: "Meddelande", col_source: "Källa", col_people: "Personer", col_time: "Tid", col_status: "Status", empty: "Inga aviseringar", people: "Personer och kanaler", home: "Hemma", away: "Borta", channels: "Kanaler", found: "Hittade automatiskt", custom: "Inställda manuellt", reset: "Tillbaka till automatiskt", no_channel: "Ingen kanal", no_people: "Inga personer i Home Assistant", escalation: "Eskalering av kritiska", escalation_text: "De berörda personerna, sedan alla efter {a} min, sedan sms-tjänsten efter {b} min. Stoppar så snart någon bekräftar.", rules_priorities: "Prioriteter", p_critical: "Direkt, även under tysta timmar, kritiskt ljud, tills bekräftad", p_alert: "De hemma (alla när ingen är hemma), hållen under tysta timmar", p_info: "De hemma, hållen under tysta timmar; ingen hemma: nästa sammanfattning", p_digest: "Alltid grupperad, skickas vid sammanfattningens tider", quiet: "Tysta timmar", quiet_start: "Början", quiet_end: "Slut", dedup: "Ignorera dubbletter i", dedup_text: "Samma ämne (eller rubrik och meddelande) inom denna tid", digest_times: "Tider för sammanfattningen", add_time: "Lägg till", away_mode: "Bortaläge", away_text: "Ingen hemma: info går till alla i stället för sammanfattningen", sms: "Sms-tjänst", sms_none: "Ingen", esc_first: "Igen till alla efter", esc_second: "Sms efter", retention: "Behåll loggen", days: "dagar", minutes: "min", test: "Skicka ett test", test_info: "Infotest", test_critical: "Kritiskt test", digest_now: "Skicka sammanfattningen nu", save: "Spara", saved: "Sparad", sent_ok: "Skickad", error: "Fel", subtitle_quiet: "Tyst till {t}", subtitle_ok: "{n} skickade i dag", acknowledge_all: "Bekräfta alla" },
+  bg: { tab_journal: "Дневник", tab_routing: "Маршрутизиране", tab_rules: "Правила", tab_settings: "Настройки", c_sent: "Изпратени днес", c_grouped: "В обобщението", c_duplicates: "Избегнати дубликати (7 д)", c_pending: "Критични за потвърждение", c_held: "Задържани от тихите часове", f_all: "Всички", f_critical: "Критични", f_pending: "За потвърждение", f_grouped: "В обобщението", f_held: "Задържани", f_duplicate: "Дубликати", col_message: "Съобщение", col_source: "Източник", col_people: "Хора", col_time: "Час", col_status: "Състояние", empty: "Няма известия", people: "Хора и канали", home: "У дома", away: "Навън", channels: "Канали", found: "Открити автоматично", custom: "Зададени ръчно", reset: "Обратно към автоматично", no_channel: "Няма канал", no_people: "Няма хора в Home Assistant", escalation: "Ескалация на критичните", escalation_text: "Засегнатите хора, после всички след {a} мин, после SMS услугата след {b} мин. Спира щом някой потвърди.", rules_priorities: "Приоритети", p_critical: "Веднага, и в тихите часове, критичен звук, до потвърждение", p_alert: "Присъстващите (всички, ако няма никой), задържано в тихите часове", p_info: "Присъстващите, задържано в тихите часове; никой у дома: следващото обобщение", p_digest: "Винаги групирано, изпраща се в часовете на обобщението", quiet: "Тихи часове", quiet_start: "Начало", quiet_end: "Край", dedup: "Пренебрегвай дубликати за", dedup_text: "Същата тема (или заглавие и съобщение) в този срок", digest_times: "Часове на обобщението", add_time: "Добави", away_mode: "Режим отсъствие", away_text: "Никой у дома: информацията отива до всички вместо в обобщението", sms: "SMS услуга", sms_none: "Няма", esc_first: "Отново до всички след", esc_second: "SMS след", retention: "Пази дневника", days: "дни", minutes: "мин", test: "Изпрати тест", test_info: "Тест информация", test_critical: "Критичен тест", digest_now: "Изпрати обобщението сега", save: "Запази", saved: "Запазено", sent_ok: "Изпратено", error: "Грешка", subtitle_quiet: "Тихо до {t}", subtitle_ok: "Изпратени днес: {n}", acknowledge_all: "Потвърди всички" },
+  ru: { tab_journal: "Журнал", tab_routing: "Маршрутизация", tab_rules: "Правила", tab_settings: "Настройки", c_sent: "Отправлено сегодня", c_grouped: "В сводке", c_duplicates: "Избежано дублей (7 дн.)", c_pending: "Критические к подтверждению", c_held: "Задержаны тихими часами", f_all: "Все", f_critical: "Критические", f_pending: "К подтверждению", f_grouped: "В сводке", f_held: "Задержанные", f_duplicate: "Дубли", col_message: "Сообщение", col_source: "Источник", col_people: "Люди", col_time: "Время", col_status: "Статус", empty: "Нет уведомлений", people: "Люди и каналы", home: "Дома", away: "Не дома", channels: "Каналы", found: "Найдены автоматически", custom: "Заданы вручную", reset: "Вернуть автоматически", no_channel: "Нет канала", no_people: "Нет людей в Home Assistant", escalation: "Эскалация критических", escalation_text: "Нужные люди, затем все через {a} мин, затем служба SMS через {b} мин. Прекращается, как только кто-то подтвердит.", rules_priorities: "Приоритеты", p_critical: "Сразу, даже в тихие часы, критический звук, до подтверждения", p_alert: "Присутствующие (все, если дома никого), задерживается в тихие часы", p_info: "Присутствующие, задерживается в тихие часы; дома никого: следующая сводка", p_digest: "Всегда группируется, отправляется во время сводки", quiet: "Тихие часы", quiet_start: "Начало", quiet_end: "Конец", dedup: "Игнорировать дубли в течение", dedup_text: "Та же тема (или заголовок и сообщение) в этот срок", digest_times: "Время сводки", add_time: "Добавить", away_mode: "Режим отсутствия", away_text: "Дома никого: информация уходит всем вместо сводки", sms: "Служба SMS", sms_none: "Нет", esc_first: "Снова всем через", esc_second: "SMS через", retention: "Хранить журнал", days: "дн.", minutes: "мин", test: "Отправить тест", test_info: "Тест информации", test_critical: "Критический тест", digest_now: "Отправить сводку сейчас", save: "Сохранить", saved: "Сохранено", sent_ok: "Отправлено", error: "Ошибка", subtitle_quiet: "Тишина до {t}", subtitle_ok: "Отправлено сегодня: {n}", acknowledge_all: "Подтвердить все" },
+  uk: { tab_journal: "Журнал", tab_routing: "Маршрутизація", tab_rules: "Правила", tab_settings: "Налаштування", c_sent: "Надіслано сьогодні", c_grouped: "У підсумку", c_duplicates: "Уникнуто дублікатів (7 дн.)", c_pending: "Критичні до підтвердження", c_held: "Затримані тихими годинами", f_all: "Усі", f_critical: "Критичні", f_pending: "До підтвердження", f_grouped: "У підсумку", f_held: "Затримані", f_duplicate: "Дублікати", col_message: "Повідомлення", col_source: "Джерело", col_people: "Люди", col_time: "Час", col_status: "Стан", empty: "Немає сповіщень", people: "Люди та канали", home: "Вдома", away: "Не вдома", channels: "Канали", found: "Знайдено автоматично", custom: "Задано вручну", reset: "Повернути автоматично", no_channel: "Немає каналу", no_people: "Немає людей у Home Assistant", escalation: "Ескалація критичних", escalation_text: "Потрібні люди, потім усі через {a} хв, потім служба SMS через {b} хв. Припиняється, щойно хтось підтвердить.", rules_priorities: "Пріоритети", p_critical: "Одразу, навіть у тихі години, критичний звук, до підтвердження", p_alert: "Присутні (усі, якщо вдома нікого), затримується в тихі години", p_info: "Присутні, затримується в тихі години; вдома нікого: наступний підсумок", p_digest: "Завжди групується, надсилається в час підсумку", quiet: "Тихі години", quiet_start: "Початок", quiet_end: "Кінець", dedup: "Ігнорувати дублікати протягом", dedup_text: "Та сама тема (або заголовок і повідомлення) в цей строк", digest_times: "Час підсумку", add_time: "Додати", away_mode: "Режим відсутності", away_text: "Вдома нікого: інформація йде всім замість підсумку", sms: "Служба SMS", sms_none: "Немає", esc_first: "Знову всім через", esc_second: "SMS через", retention: "Зберігати журнал", days: "дн.", minutes: "хв", test: "Надіслати тест", test_info: "Тест інформації", test_critical: "Критичний тест", digest_now: "Надіслати підсумок зараз", save: "Зберегти", saved: "Збережено", sent_ok: "Надіслано", error: "Помилка", subtitle_quiet: "Тиша до {t}", subtitle_ok: "Надіслано сьогодні: {n}", acknowledge_all: "Підтвердити всі" },
+  hu: { tab_journal: "Napló", tab_routing: "Irányítás", tab_rules: "Szabályok", tab_settings: "Beállítások", c_sent: "Ma elküldve", c_grouped: "Az összefoglalóban", c_duplicates: "Elkerült ismétlődők (7 nap)", c_pending: "Nyugtázandó kritikusak", c_held: "Csendes órák miatt visszatartva", f_all: "Mind", f_critical: "Kritikus", f_pending: "Nyugtázandó", f_grouped: "Az összefoglalóban", f_held: "Visszatartva", f_duplicate: "Ismétlődők", col_message: "Üzenet", col_source: "Forrás", col_people: "Személyek", col_time: "Idő", col_status: "Állapot", empty: "Nincs értesítés", people: "Személyek és csatornák", home: "Otthon", away: "Távol", channels: "Csatornák", found: "Automatikusan talált", custom: "Kézzel beállítva", reset: "Vissza automatikusra", no_channel: "Nincs csatorna", no_people: "Nincs személy a Home Assistantban", escalation: "Kritikusak eszkalációja", escalation_text: "Az érintettek, majd mindenki {a} perc után, majd az SMS szolgáltatás {b} perc után. Leáll, amint valaki nyugtáz.", rules_priorities: "Prioritások", p_critical: "Azonnal, csendes órákban is, kritikus hang, nyugtázásig", p_alert: "Az otthon lévők (mindenki, ha senki sincs otthon), csendes órákban visszatartva", p_info: "Az otthon lévők, csendes órákban visszatartva; senki sincs otthon: következő összefoglaló", p_digest: "Mindig csoportosítva, az összefoglaló időpontjaiban küldve", quiet: "Csendes órák", quiet_start: "Kezdet", quiet_end: "Vége", dedup: "Ismétlődők kihagyása", dedup_text: "Azonos téma (vagy cím és üzenet) ezen időn belül", digest_times: "Összefoglaló időpontjai", add_time: "Hozzáadás", away_mode: "Távollét mód", away_text: "Senki sincs otthon: az infók mindenkihez mennek az összefoglaló helyett", sms: "SMS szolgáltatás", sms_none: "Nincs", esc_first: "Újra mindenkinek ennyi után", esc_second: "SMS ennyi után", retention: "Napló megőrzése", days: "nap", minutes: "perc", test: "Teszt küldése", test_info: "Info teszt", test_critical: "Kritikus teszt", digest_now: "Összefoglaló küldése most", save: "Mentés", saved: "Mentve", sent_ok: "Elküldve", error: "Hiba", subtitle_quiet: "Csend {t}-ig", subtitle_ok: "Ma elküldve: {n}", acknowledge_all: "Mind nyugtázása" },
+  sk: { tab_journal: "Denník", tab_routing: "Smerovanie", tab_rules: "Pravidlá", tab_settings: "Nastavenia", c_sent: "Odoslané dnes", c_grouped: "V prehľade", c_duplicates: "Zabránené duplikáty (7 d)", c_pending: "Kritické na potvrdenie", c_held: "Zadržané tichými hodinami", f_all: "Všetky", f_critical: "Kritické", f_pending: "Na potvrdenie", f_grouped: "V prehľade", f_held: "Zadržané", f_duplicate: "Duplikáty", col_message: "Správa", col_source: "Zdroj", col_people: "Osoby", col_time: "Čas", col_status: "Stav", empty: "Žiadne upozornenia", people: "Osoby a kanály", home: "Doma", away: "Preč", channels: "Kanály", found: "Nájdené automaticky", custom: "Nastavené ručne", reset: "Späť na automatické", no_channel: "Žiadny kanál", no_people: "Žiadne osoby v Home Assistant", escalation: "Eskalácia kritických", escalation_text: "Dotknuté osoby, potom všetci po {a} min, potom služba SMS po {b} min. Skončí, keď niekto potvrdí.", rules_priorities: "Priority", p_critical: "Hneď, aj v tichých hodinách, kritický zvuk, do potvrdenia", p_alert: "Prítomní (všetci, ak nikto nie je doma), zadržané v tichých hodinách", p_info: "Prítomní, zadržané v tichých hodinách; nikto doma: ďalší prehľad", p_digest: "Vždy zoskupené, posiela sa v časoch prehľadu", quiet: "Tiché hodiny", quiet_start: "Začiatok", quiet_end: "Koniec", dedup: "Ignorovať duplikáty počas", dedup_text: "Rovnaká téma (alebo názov a správa) v tomto čase", digest_times: "Časy prehľadu", add_time: "Pridať", away_mode: "Režim neprítomnosti", away_text: "Nikto doma: informácie idú všetkým namiesto prehľadu", sms: "Služba SMS", sms_none: "Žiadna", esc_first: "Znova všetkým po", esc_second: "SMS po", retention: "Uchovávať denník", days: "dní", minutes: "min", test: "Odoslať test", test_info: "Test informácie", test_critical: "Kritický test", digest_now: "Odoslať prehľad teraz", save: "Uložiť", saved: "Uložené", sent_ok: "Odoslané", error: "Chyba", subtitle_quiet: "Ticho do {t}", subtitle_ok: "Odoslané dnes: {n}", acknowledge_all: "Potvrdiť všetky" },
+  cs: { tab_journal: "Deník", tab_routing: "Směrování", tab_rules: "Pravidla", tab_settings: "Nastavení", c_sent: "Odesláno dnes", c_grouped: "V přehledu", c_duplicates: "Zabráněné duplikáty (7 d)", c_pending: "Kritická k potvrzení", c_held: "Zadrženo tichými hodinami", f_all: "Vše", f_critical: "Kritická", f_pending: "K potvrzení", f_grouped: "V přehledu", f_held: "Zadržená", f_duplicate: "Duplikáty", col_message: "Zpráva", col_source: "Zdroj", col_people: "Osoby", col_time: "Čas", col_status: "Stav", empty: "Žádná oznámení", people: "Osoby a kanály", home: "Doma", away: "Pryč", channels: "Kanály", found: "Nalezené automaticky", custom: "Nastavené ručně", reset: "Zpět na automatické", no_channel: "Žádný kanál", no_people: "Žádné osoby v Home Assistant", escalation: "Eskalace kritických", escalation_text: "Dotčené osoby, pak všichni po {a} min, pak služba SMS po {b} min. Skončí, jakmile někdo potvrdí.", rules_priorities: "Priority", p_critical: "Hned, i v tichých hodinách, kritický zvuk, do potvrzení", p_alert: "Přítomní (všichni, když nikdo není doma), zadrženo v tichých hodinách", p_info: "Přítomní, zadrženo v tichých hodinách; nikdo doma: další přehled", p_digest: "Vždy seskupeno, odesílá se v časech přehledu", quiet: "Tiché hodiny", quiet_start: "Začátek", quiet_end: "Konec", dedup: "Ignorovat duplikáty po dobu", dedup_text: "Stejné téma (nebo název a zpráva) v této době", digest_times: "Časy přehledu", add_time: "Přidat", away_mode: "Režim nepřítomnosti", away_text: "Nikdo doma: informace jdou všem místo přehledu", sms: "Služba SMS", sms_none: "Žádná", esc_first: "Znovu všem po", esc_second: "SMS po", retention: "Uchovávat deník", days: "dní", minutes: "min", test: "Odeslat test", test_info: "Test informace", test_critical: "Kritický test", digest_now: "Odeslat přehled hned", save: "Uložit", saved: "Uloženo", sent_ok: "Odesláno", error: "Chyba", subtitle_quiet: "Ticho do {t}", subtitle_ok: "Odesláno dnes: {n}", acknowledge_all: "Potvrdit vše" },
+  sl: { tab_journal: "Dnevnik", tab_routing: "Usmerjanje", tab_rules: "Pravila", tab_settings: "Nastavitve", c_sent: "Poslano danes", c_grouped: "V povzetku", c_duplicates: "Preprečeni dvojniki (7 d)", c_pending: "Kritična za potrditev", c_held: "Zadržano zaradi tihih ur", f_all: "Vsa", f_critical: "Kritična", f_pending: "Za potrditev", f_grouped: "V povzetku", f_held: "Zadržana", f_duplicate: "Dvojniki", col_message: "Sporočilo", col_source: "Vir", col_people: "Osebe", col_time: "Čas", col_status: "Stanje", empty: "Ni obvestil", people: "Osebe in kanali", home: "Doma", away: "Odsoten", channels: "Kanali", found: "Najdeni samodejno", custom: "Nastavljeni ročno", reset: "Nazaj na samodejno", no_channel: "Ni kanala", no_people: "Ni oseb v Home Assistant", escalation: "Stopnjevanje kritičnih", escalation_text: "Prizadete osebe, nato vsi po {a} min, nato storitev SMS po {b} min. Ustavi se, ko kdo potrdi.", rules_priorities: "Prednosti", p_critical: "Takoj, tudi v tihih urah, kritičen zvok, do potrditve", p_alert: "Prisotni (vsi, če ni nikogar doma), zadržano v tihih urah", p_info: "Prisotni, zadržano v tihih urah; nikogar doma: naslednji povzetek", p_digest: "Vedno združeno, poslano ob časih povzetka", quiet: "Tihe ure", quiet_start: "Začetek", quiet_end: "Konec", dedup: "Prezri dvojnike za", dedup_text: "Ista tema (ali naslov in sporočilo) v tem času", digest_times: "Časi povzetka", add_time: "Dodaj", away_mode: "Način odsotnosti", away_text: "Nikogar doma: informacije gredo vsem namesto v povzetek", sms: "Storitev SMS", sms_none: "Brez", esc_first: "Znova vsem po", esc_second: "SMS po", retention: "Hrani dnevnik", days: "dni", minutes: "min", test: "Pošlji preizkus", test_info: "Preizkus informacije", test_critical: "Kritični preizkus", digest_now: "Pošlji povzetek zdaj", save: "Shrani", saved: "Shranjeno", sent_ok: "Poslano", error: "Napaka", subtitle_quiet: "Tišina do {t}", subtitle_ok: "Poslano danes: {n}", acknowledge_all: "Potrdi vse" },
+  lv: { tab_journal: "Žurnāls", tab_routing: "Maršrutēšana", tab_rules: "Noteikumi", tab_settings: "Iestatījumi", c_sent: "Nosūtīti šodien", c_grouped: "Kopsavilkumā", c_duplicates: "Novērsti dublikāti (7 d)", c_pending: "Apstiprināmie kritiskie", c_held: "Aizturēti klusajās stundās", f_all: "Visi", f_critical: "Kritiskie", f_pending: "Jāapstiprina", f_grouped: "Kopsavilkumā", f_held: "Aizturētie", f_duplicate: "Dublikāti", col_message: "Ziņa", col_source: "Avots", col_people: "Personas", col_time: "Laiks", col_status: "Stāvoklis", empty: "Nav paziņojumu", people: "Personas un kanāli", home: "Mājās", away: "Prom", channels: "Kanāli", found: "Atrasti automātiski", custom: "Iestatīti manuāli", reset: "Atpakaļ uz automātisko", no_channel: "Nav kanāla", no_people: "Home Assistant nav personu", escalation: "Kritisko eskalācija", escalation_text: "Attiecīgās personas, tad visi pēc {a} min, tad SMS pakalpojums pēc {b} min. Apstājas, tiklīdz kāds apstiprina.", rules_priorities: "Prioritātes", p_critical: "Uzreiz, arī klusajās stundās, kritiska skaņa, līdz apstiprināšanai", p_alert: "Klātesošie (visi, ja neviena nav mājās), aizturēts klusajās stundās", p_info: "Klātesošie, aizturēts klusajās stundās; neviena mājās: nākamais kopsavilkums", p_digest: "Vienmēr grupēts, sūtīts kopsavilkuma laikos", quiet: "Klusās stundas", quiet_start: "Sākums", quiet_end: "Beigas", dedup: "Ignorēt dublikātus", dedup_text: "Tā pati tēma (vai virsraksts un ziņa) šajā laikā", digest_times: "Kopsavilkuma laiki", add_time: "Pievienot", away_mode: "Prombūtnes režīms", away_text: "Neviena mājās: informācija visiem, nevis kopsavilkumā", sms: "SMS pakalpojums", sms_none: "Nav", esc_first: "Atkal visiem pēc", esc_second: "SMS pēc", retention: "Glabāt žurnālu", days: "dienas", minutes: "min", test: "Sūtīt testu", test_info: "Informācijas tests", test_critical: "Kritisks tests", digest_now: "Sūtīt kopsavilkumu tagad", save: "Saglabāt", saved: "Saglabāts", sent_ok: "Nosūtīts", error: "Kļūda", subtitle_quiet: "Klusums līdz {t}", subtitle_ok: "Nosūtīti šodien: {n}", acknowledge_all: "Apstiprināt visus" },
+  el: { tab_journal: "Ημερολόγιο", tab_routing: "Δρομολόγηση", tab_rules: "Κανόνες", tab_settings: "Ρυθμίσεις", c_sent: "Στάλθηκαν σήμερα", c_grouped: "Στη σύνοψη", c_duplicates: "Διπλότυπα που αποφεύχθηκαν (7 ημ.)", c_pending: "Κρίσιμες προς επιβεβαίωση", c_held: "Σε αναμονή λόγω ησυχίας", f_all: "Όλες", f_critical: "Κρίσιμες", f_pending: "Προς επιβεβαίωση", f_grouped: "Στη σύνοψη", f_held: "Σε αναμονή", f_duplicate: "Διπλότυπα", col_message: "Μήνυμα", col_source: "Πηγή", col_people: "Άτομα", col_time: "Ώρα", col_status: "Κατάσταση", empty: "Καμία ειδοποίηση", people: "Άτομα και κανάλια", home: "Σπίτι", away: "Εκτός", channels: "Κανάλια", found: "Βρέθηκαν αυτόματα", custom: "Ορίστηκαν χειροκίνητα", reset: "Επιστροφή στο αυτόματο", no_channel: "Χωρίς κανάλι", no_people: "Κανένα άτομο στο Home Assistant", escalation: "Κλιμάκωση κρίσιμων", escalation_text: "Τα σχετικά άτομα, μετά όλοι μετά από {a} λεπ., μετά η υπηρεσία SMS μετά από {b} λεπ. Σταματά μόλις κάποιος επιβεβαιώσει.", rules_priorities: "Προτεραιότητες", p_critical: "Αμέσως, και σε ώρες ησυχίας, κρίσιμος ήχος, μέχρι επιβεβαίωση", p_alert: "Όσοι είναι σπίτι (όλοι αν δεν είναι κανείς), σε αναμονή στις ώρες ησυχίας", p_info: "Όσοι είναι σπίτι, σε αναμονή στις ώρες ησυχίας· κανείς σπίτι: η επόμενη σύνοψη", p_digest: "Πάντα ομαδοποιημένη, στέλνεται στις ώρες της σύνοψης", quiet: "Ώρες ησυχίας", quiet_start: "Έναρξη", quiet_end: "Λήξη", dedup: "Αγνόηση διπλότυπων για", dedup_text: "Ίδιο θέμα (ή τίτλος και μήνυμα) σε αυτό το διάστημα", digest_times: "Ώρες σύνοψης", add_time: "Προσθήκη", away_mode: "Λειτουργία απουσίας", away_text: "Κανείς σπίτι: οι πληροφορίες πάνε σε όλους αντί για τη σύνοψη", sms: "Υπηρεσία SMS", sms_none: "Καμία", esc_first: "Ξανά σε όλους μετά από", esc_second: "SMS μετά από", retention: "Διατήρηση ημερολογίου", days: "ημέρες", minutes: "λεπ.", test: "Αποστολή δοκιμής", test_info: "Δοκιμή πληροφορίας", test_critical: "Κρίσιμη δοκιμή", digest_now: "Αποστολή σύνοψης τώρα", save: "Αποθήκευση", saved: "Αποθηκεύτηκε", sent_ok: "Στάλθηκε", error: "Σφάλμα", subtitle_quiet: "Ησυχία έως {t}", subtitle_ok: "Στάλθηκαν σήμερα: {n}", acknowledge_all: "Επιβεβαίωση όλων" },
+};
+
+var NHP_TABS = ['journal', 'routing', 'rules', 'settings'];
+var NHP_FILTERS = ['all', 'critical', 'pending', 'grouped', 'held', 'duplicate'];
+var NHP_TONES = { delivered: 'ok', acknowledged: 'ok', pending: 'bad', held: 'idle', grouped: 'warn', duplicate: 'info', nobody: 'bad', failed: 'bad' };
+var NHP_ICONS = {
+  bell: 'M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21',
+  send: 'M2,21L23,12L2,3V10L17,12L2,14V21Z',
+  tray: 'M2 12H4V17H20V12H22V17A2 2 0 0 1 20 19H4A2 2 0 0 1 2 17M11 5H13V13.17L16.59 9.59L18 11L12 17L6 11L7.41 9.59L11 13.17Z',
+  person: 'M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z',
+  ok: 'M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z',
+  bad: 'M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z',
+  warn: 'M19,15H15A3,3 0 0,1 12,18A3,3 0 0,1 9,15H5V5H19M19,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3Z',
+  idle: 'M12 3A9 9 0 1 0 21 12 7 7 0 0 1 12 3Z',
+  info: 'M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z',
+  close: 'M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z',
+};
+
+var nhpEsc = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+var nhpIcon = (name, cls) => `<svg class="${cls || 'ic'}" viewBox="0 0 24 24" aria-hidden="true"><path d="${NHP_ICONS[name] || ''}"/></svg>`;
+var nhpFill = (text, values) => String(text).replace(/\{(\w+)\}/g, (m, k) => (values[k] == null ? m : values[k]));
+
+class NotifyHubPanel extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this._data = null;
+    this._draft = {};
+    this._filter = 'all';
+    this._editing = null;
+    var tab = new URLSearchParams(location.search).get('tab');
+    this._tab = NHP_TABS.includes(tab) ? tab : 'journal';
+    this.shadowRoot.addEventListener('click', (ev) => this._click(ev));
+    this.shadowRoot.addEventListener('change', (ev) => this._change(ev));
+  }
+
+  set hass(hass) {
+    var first = !this._hass;
+    this._hass = hass;
+    // The hub's sensor changes with every notification: the journal is fetched again then.
+    var id = Object.keys(hass.states).find((k) => k.startsWith('sensor.') && hass.states[k]?.attributes?.notify_hub);
+    var stamp = id ? hass.states[id].last_updated : '';
+    if (first || stamp !== this._stamp) {
+      this._stamp = stamp;
+      this._load();
+    } else {
+      this._render();
+    }
+  }
+
+  set narrow(value) {
+    this._narrow = value;
+    this._render();
+  }
+
+  connectedCallback() {
+    this._timer = setInterval(() => this._load(), 30000);
+  }
+
+  disconnectedCallback() {
+    clearInterval(this._timer);
+  }
+
+  _t() {
+    var raw = String(this._hass?.locale?.language || this._hass?.language || 'en');
+    var lang = NH_PANEL_I18N[raw] ? raw : NH_PANEL_I18N[raw.split('-')[0]] ? raw.split('-')[0] : 'en';
+    return Object.assign({}, NH_PANEL_I18N.en, NH_PANEL_I18N[lang]);
+  }
+
+  async _load() {
+    if (!this._hass) return;
+    try {
+      this._data = await this._hass.callWS({ type: 'notify_hub/state' });
+      this._error = '';
+    } catch (err) {
+      this._error = err?.message || String(err);
+    }
+    this._render();
+  }
+
+  _options() {
+    return Object.assign({}, this._data?.options || {}, this._draft);
+  }
+
+  _setTab(tab) {
+    this._tab = tab;
+    this._draft = {};
+    this._editing = null;
+    this._filter = 'all';
+    var url = new URL(location.href);
+    url.searchParams.set('tab', tab);
+    history.replaceState(history.state, '', url);
+    this._render();
+  }
+
+  async _ws(message, done) {
+    try {
+      await this._hass.callWS(message);
+      this._toast = done;
+    } catch (err) {
+      this._toast = `${this._t().error}: ${err?.message || err}`;
+    }
+    this._render();
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => {
+      this._toast = '';
+      this._render();
+    }, 2500);
+    await this._load();
+  }
+
+  _click(ev) {
+    var el = ev.composedPath().find((n) => n?.dataset?.act);
+    if (!el) return;
+    var t = this._t();
+    var act = el.dataset.act;
+    if (act === 'tab') this._setTab(el.dataset.tab);
+    else if (act === 'filter') {
+      this._filter = el.dataset.filter;
+      this._render();
+    } else if (act === 'ack') this._ws({ type: 'notify_hub/acknowledge', ...(el.dataset.id ? { entry: el.dataset.id } : {}) }, t.saved);
+    else if (act === 'test') this._ws({ type: 'notify_hub/test', priority: el.dataset.priority || 'info' }, t.sent_ok);
+    else if (act === 'digest') this._ws({ type: 'notify_hub/digest' }, t.sent_ok);
+    else if (act === 'edit') {
+      this._editing = this._editing === el.dataset.person ? null : el.dataset.person;
+      this._render();
+    } else if (act === 'reset') {
+      var people = Object.assign({}, this._options().people || {});
+      delete people[el.dataset.person];
+      this._editing = null;
+      this._ws({ type: 'notify_hub/save', options: { people } }, t.saved);
+    } else if (act === 'add-time') {
+      var input = this.shadowRoot.querySelector('#new-time');
+      if (!input?.value) return;
+      var times = [...new Set([...(this._options().digest_times || []), input.value.slice(0, 5)])].sort();
+      this._draft.digest_times = times;
+      this._render();
+    } else if (act === 'del-time') {
+      this._draft.digest_times = (this._options().digest_times || []).filter((x) => x !== el.dataset.time);
+      this._render();
+    } else if (act === 'save') {
+      var draft = this._draft;
+      this._draft = {};
+      this._ws({ type: 'notify_hub/save', options: draft }, t.saved);
+    }
+  }
+
+  _change(ev) {
+    var el = ev.target;
+    var key = el?.dataset?.key;
+    if (el?.dataset?.channel) {
+      var person = el.dataset.person;
+      var current = (this._data?.people || []).find((p) => p.entity_id === person)?.channels || [];
+      var set = new Set(current);
+      if (el.checked) set.add(el.dataset.channel);
+      else set.delete(el.dataset.channel);
+      var people = Object.assign({}, this._options().people || {}, { [person]: [...set] });
+      this._ws({ type: 'notify_hub/save', options: { people } }, this._t().saved);
+      return;
+    }
+    if (!key) return;
+    var value = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
+    if (key === 'esc0' || key === 'esc1') {
+      var esc = [...(this._options().escalation_minutes || [5, 10])];
+      esc[key === 'esc0' ? 0 : 1] = Number(el.value);
+      this._draft.escalation_minutes = esc;
+    } else this._draft[key] = value === '' ? null : value;
+    this._render();
+  }
+
+  _render() {
+    if (!this._hass) return;
+    var t = this._t();
+    var d = this._data;
+    var counts = d?.counts || {};
+    var pending = Number(counts.pending) || 0;
+    var tone = pending ? 'bad' : d?.quiet ? 'idle' : 'ok';
+    var subtitle = d ? (d.quiet && d.quiet_hours ? nhpFill(t.subtitle_quiet, { t: d.quiet_hours[1] }) : nhpFill(t.subtitle_ok, { n: counts.sent_today || 0 })) : '';
+    var body = !d ? `<div class="empty">${nhpEsc(this._error || '…')}</div>` : this[`_${this._tab}`](d, t);
+    var dark = !!this._hass.themes?.darkMode;
+    this.shadowRoot.innerHTML = `<style>${NotifyHubPanel.styles()}</style>
+      <div class="page tone-${tone}${dark ? ' night' : ''}">
+        <header class="top">
+          ${NotifyHubPanel.scene(tone === 'bad')}
+          <div class="ground"></div>
+          <div class="bar">
+            ${this._narrow ? '<ha-menu-button class="menu"></ha-menu-button>' : ''}
+            <span class="ico">${nhpIcon('bell')}</span>
+            <span class="htxt"><span class="title">Notify Hub</span><span class="subtitle">${nhpEsc(subtitle)}</span></span>
+            ${pending ? `<span class="pill">${nhpEsc(nhpFill('{n}', { n: pending }))} · ${nhpEsc(t.c_pending)}</span>` : ''}
+            <button class="round" type="button" data-act="test" data-priority="info" title="${nhpEsc(t.test_info)}" aria-label="${nhpEsc(t.test_info)}">${nhpIcon('send')}</button>
+            <button class="round" type="button" data-act="digest" title="${nhpEsc(t.digest_now)}" aria-label="${nhpEsc(t.digest_now)}">${nhpIcon('tray')}</button>
+          </div>
+        </header>
+        <nav class="tabs" role="tablist">${NHP_TABS.map((tab) => `<button type="button" role="tab" class="tab${tab === this._tab ? ' on' : ''}" aria-selected="${tab === this._tab}" data-act="tab" data-tab="${tab}">${nhpEsc(t[`tab_${tab}`])}</button>`).join('')}</nav>
+        <main class="wrap">${body}</main>
+        ${this._toast ? `<div class="toast">${nhpEsc(this._toast)}</div>` : ''}
+      </div>`;
+    var menu = this.shadowRoot.querySelector('ha-menu-button');
+    if (menu) {
+      menu.hass = this._hass;
+      menu.narrow = this._narrow;
+    }
+  }
+
+  static scene(alarm) {
+    return `<svg class="scene" viewBox="0 0 320 110" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+      <g class="letter l1"><rect x="70" y="48" width="44" height="28" rx="4"/><path d="M70 50 l22 14 l22 -14"/></g>
+      <g class="letter l2"><rect x="250" y="58" width="36" height="24" rx="4"/><path d="M250 60 l18 12 l18 -12"/></g>
+      <g class="bell${alarm ? ' ring' : ''}"><path class="bbody" d="M150 98 v-34 a26 26 0 0 1 52 0 v34 z"/><rect class="brim" x="144" y="96" width="64" height="7" rx="3"/><circle class="bclap" cx="176" cy="106" r="5"/></g>
+      <path class="wave w1" d="M214 50 q10 10 0 20"/><path class="wave w2" d="M224 42 q18 18 0 36"/>
+    </svg>`;
+  }
+
+  _journal(d, t) {
+    var c = d.counts || {};
+    var tiles = [
+      ['c_sent', c.sent_today, ''],
+      ['c_grouped', c.grouped, c.grouped ? 'warn' : ''],
+      ['c_duplicates', c.duplicates, c.duplicates ? 'ok' : ''],
+      ['c_pending', c.pending, c.pending ? 'bad' : ''],
+    ]
+      .map(([k, v, cls]) => `<div class="tile${cls ? ` t-${cls}` : ''}"><span class="n">${nhpEsc(v ?? 0)}</span><span class="k">${nhpEsc(t[k])}</span>${cls ? '<span class="badge"></span>' : ''}</div>`)
+      .join('');
+    var match = (e) =>
+      this._filter === 'all' || (this._filter === 'critical' ? e.priority === 'critical' : e.status === this._filter);
+    var rows = (d.recent || []).filter(match);
+    var chips = NHP_FILTERS.map((f) => `<button type="button" class="chip${f === this._filter ? ' on' : ''}" data-act="filter" data-filter="${f}">${nhpEsc(t[`f_${f}`])}</button>`).join('');
+    var lang = this._hass.locale?.language || 'en';
+    var when = (iso) => {
+      try {
+        return new Date(iso).toLocaleString(lang, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
+      } catch (_err) {
+        return iso;
+      }
+    };
+    var list = rows.length
+      ? rows
+          .map((e) => {
+            var tone = NHP_TONES[e.status] || 'ok';
+            var status = { delivered: t.f_all, pending: t.f_pending, grouped: t.f_grouped, held: t.f_held, duplicate: t.f_duplicate }[e.status];
+            return `<div class="row r-${tone}">
+              <span class="dot">${nhpIcon(tone)}</span>
+              <span class="txt"><span class="nm">${nhpEsc(e.title || e.message)}</span><span class="sub">${nhpEsc(e.title ? e.message : '')}</span></span>
+              <span class="cell">${nhpEsc(e.source || '—')}</span>
+              <span class="cell">${nhpEsc((e.people || []).join(', ') || '—')}</span>
+              <span class="cell time">${nhpEsc(when(e.time))}</span>
+              ${e.status === 'pending' ? `<button class="btn" type="button" data-act="ack" data-id="${nhpEsc(e.id)}">${nhpEsc(t.acknowledge_all.split(' ')[0])}</button>` : `<span class="tag t-${tone}">${nhpEsc(e.status === 'delivered' || e.status === 'acknowledged' ? '✓' : status || e.status)}</span>`}
+            </div>`;
+          })
+          .join('')
+      : `<div class="empty">${nhpEsc(t.empty)}</div>`;
+    return `<div class="tiles">${tiles}</div>
+      <div class="chips">${chips}${c.pending ? `<button type="button" class="btn danger" data-act="ack">${nhpEsc(t.acknowledge_all)}</button>` : ''}</div>
+      <div class="list">${list}</div>`;
+  }
+
+  _routing(d, t) {
+    var people = d.people || [];
+    var opts = this._options();
+    var esc = opts.escalation_minutes || [5, 10];
+    var cards = people.length
+      ? people
+          .map((p) => {
+            var editing = this._editing === p.entity_id;
+            var channels = p.channels.length ? p.channels.map((c) => `<span class="chip static">${nhpEsc(c.replace('notify.', ''))}</span>`).join('') : `<span class="muted">${nhpEsc(t.no_channel)}</span>`;
+            var picker = editing
+              ? `<div class="picker">${(d.services || []).map((s) => `<label class="check"><input type="checkbox" data-person="${nhpEsc(p.entity_id)}" data-channel="${nhpEsc(s)}"${p.channels.includes(s) ? ' checked' : ''}><span>${nhpEsc(s.replace('notify.', ''))}</span></label>`).join('')}
+                  ${p.custom ? `<button type="button" class="btn" data-act="reset" data-person="${nhpEsc(p.entity_id)}">${nhpEsc(t.reset)}</button>` : ''}</div>`
+              : '';
+            return `<div class="card p-${p.home ? 'home' : 'away'}">
+              <div class="phead"><span class="dot">${nhpIcon('person')}</span>
+                <span class="txt"><span class="nm">${nhpEsc(p.name)}</span><span class="sub">${nhpEsc(p.home ? t.home : t.away)} · ${nhpEsc(p.custom ? t.custom : t.found)}</span></span>
+                <button type="button" class="btn" data-act="edit" data-person="${nhpEsc(p.entity_id)}" aria-expanded="${editing}">${nhpEsc(t.channels)}</button></div>
+              <div class="chips">${channels}</div>${picker}
+            </div>`;
+          })
+          .join('')
+      : `<div class="empty">${nhpEsc(t.no_people)}</div>`;
+    return `<div class="cols"><section class="col"><h2>${nhpEsc(t.people)}</h2>${cards}</section>
+      <section class="col"><h2>${nhpEsc(t.escalation)}</h2><div class="card"><p class="text">${nhpEsc(nhpFill(t.escalation_text, { a: esc[0], b: esc[1] }))}</p>
+      <div class="chips"><span class="chip static">${nhpEsc(t.p_alert.split(' (')[0])}</span><span class="muted">→ ${esc[0]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(t.f_all)}</span><span class="muted">→ ${esc[1]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(opts.sms_service ? opts.sms_service.replace('notify.', '') : t.sms_none)}</span></div>
+      <div class="actions"><button type="button" class="btn danger" data-act="test" data-priority="critical">${nhpEsc(t.test_critical)}</button></div></div></section></div>`;
+  }
+
+  _rules(d, t) {
+    var o = this._options();
+    var times = (o.digest_times || []).map((x) => `<span class="chip static">${nhpEsc(x)}<button type="button" class="x" data-act="del-time" data-time="${nhpEsc(x)}" aria-label="×">${nhpIcon('close')}</button></span>`).join('');
+    var levels = ['critical', 'alert', 'info', 'digest']
+      .map((p) => `<div class="lvl"><span class="tag t-${{ critical: 'bad', alert: 'warn', info: 'info', digest: 'idle' }[p]}">${nhpEsc(p)}</span><span>${nhpEsc(t[`p_${p}`])}</span></div>`)
+      .join('');
+    return `<div class="cols"><section class="col"><h2>${nhpEsc(t.rules_priorities)}</h2><div class="card">${levels}</div></section>
+      <section class="col"><h2>${nhpEsc(t.quiet)}</h2><div class="card form">
+        ${this._switch('quiet_enabled', t.quiet, o.quiet_enabled !== false)}
+        <div class="grid2"><label class="field"><span>${nhpEsc(t.quiet_start)}</span><input type="time" data-key="quiet_start" value="${nhpEsc(o.quiet_start || '22:00')}"></label>
+        <label class="field"><span>${nhpEsc(t.quiet_end)}</span><input type="time" data-key="quiet_end" value="${nhpEsc(o.quiet_end || '07:00')}"></label></div>
+        <label class="field"><span>${nhpEsc(t.dedup)} (${nhpEsc(t.minutes)})</span><input type="number" min="0" max="1440" data-key="dedup_minutes" value="${nhpEsc(o.dedup_minutes ?? 10)}"><small>${nhpEsc(t.dedup_text)}</small></label>
+        <div class="field"><span>${nhpEsc(t.digest_times)}</span><div class="chips">${times}<input id="new-time" type="time"><button type="button" class="btn" data-act="add-time">${nhpEsc(t.add_time)}</button></div></div>
+        ${this._switch('away_mode', t.away_mode, !!o.away_mode, t.away_text)}
+        ${this._saveBar(t)}
+      </div></section></div>`;
+  }
+
+  _settings(d, t) {
+    var o = this._options();
+    var esc = o.escalation_minutes || [5, 10];
+    var services = (d.services || []).filter((s) => !s.startsWith('notify.mobile_app_'));
+    return `<div class="cols"><section class="col"><h2>${nhpEsc(t.escalation)}</h2><div class="card form">
+        <label class="field"><span>${nhpEsc(t.sms)}</span><select data-key="sms_service"><option value="">${nhpEsc(t.sms_none)}</option>${services.map((s) => `<option value="${nhpEsc(s)}"${s === o.sms_service ? ' selected' : ''}>${nhpEsc(s)}</option>`).join('')}</select></label>
+        <div class="grid2"><label class="field"><span>${nhpEsc(t.esc_first)} (${nhpEsc(t.minutes)})</span><input type="number" min="1" max="240" data-key="esc0" value="${esc[0]}"></label>
+        <label class="field"><span>${nhpEsc(t.esc_second)} (${nhpEsc(t.minutes)})</span><input type="number" min="1" max="240" data-key="esc1" value="${esc[1]}"></label></div>
+        <label class="field"><span>${nhpEsc(t.retention)} (${nhpEsc(t.days)})</span><input type="number" min="1" max="90" data-key="retention_days" value="${nhpEsc(o.retention_days ?? 7)}"></label>
+        ${this._saveBar(t)}
+      </div></section>
+      <section class="col"><h2>${nhpEsc(t.test)}</h2><div class="card"><div class="actions">
+        <button type="button" class="btn" data-act="test" data-priority="info">${nhpEsc(t.test_info)}</button>
+        <button type="button" class="btn danger" data-act="test" data-priority="critical">${nhpEsc(t.test_critical)}</button>
+        <button type="button" class="btn" data-act="digest">${nhpEsc(t.digest_now)}</button></div>
+        <p class="muted">Notify Hub ${nhpEsc(d.version || NOTIFY_HUB_PANEL_VERSION)}</p></div></section></div>`;
+  }
+
+  _switch(key, label, on, help) {
+    return `<label class="switch"><span class="stxt"><span class="nm">${nhpEsc(label)}</span>${help ? `<small>${nhpEsc(help)}</small>` : ''}</span><input type="checkbox" data-key="${key}"${on ? ' checked' : ''}><span class="sw" aria-hidden="true"></span></label>`;
+  }
+
+  _saveBar(t) {
+    var dirty = Object.keys(this._draft).length > 0;
+    return `<div class="actions"><button type="button" class="btn primary" data-act="save"${dirty ? '' : ' disabled'}>${nhpEsc(t.save)}</button></div>`;
+  }
+
+  static styles() {
+    return `
+      :host { display: block; --ok: var(--success-color, #43a047); --warn: var(--warning-color, #f59e0b); --bad: var(--error-color, #db4437);
+              --idle: var(--secondary-text-color, #727272); --info: #2563eb; --accent: #2563eb; }
+      .page { min-height: 100vh; background: var(--primary-background-color); color: var(--primary-text-color); font-family: var(--paper-font-body1_-_font-family, inherit); }
+      .page.tone-ok { --c: var(--accent); } .page.tone-bad { --c: var(--bad); } .page.tone-idle { --c: var(--idle); }
+      .top { position: relative; height: 110px; overflow: hidden; background: linear-gradient(#dbeafe, #f0f6ff); }
+      .night .top { background: linear-gradient(#0f1b33, #1c2a48); }
+      .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #93c5fd; } .night .ground { background: #36507e; }
+      .scene { position: absolute; right: 340px; bottom: 6px; height: 104px; width: auto; max-width: 40%; }
+      @media (max-width: 900px) { .scene { right: 120px; opacity: .35; } }
+      .letter rect { fill: #fff; stroke: #93c5fd; stroke-width: 2; } .letter path { fill: none; stroke: #93c5fd; stroke-width: 2; }
+      .night .letter rect { fill: #e6ebf3; stroke: #5b7bb3; } .night .letter path { stroke: #5b7bb3; }
+      .bbody { fill: #93c5fd; } .brim, .bclap { fill: #60a5fa; } .night .bbody { fill: #5b7bb3; } .night .brim, .night .bclap { fill: #8fb3ee; }
+      .tone-bad .bbody { fill: #fca5a5; } .tone-bad .brim, .tone-bad .bclap { fill: #ef4444; }
+      .wave { fill: none; stroke: #3b82f6; stroke-width: 3; stroke-linecap: round; animation: nhp-wave 1.8s ease-in-out infinite; } .w2 { animation-delay: .3s; }
+      .tone-bad .wave { stroke: #ef4444; } .tone-idle .wave { opacity: .25; animation: none; }
+      .letter { animation: nhp-fly 6s ease-in-out infinite; } .l2 { animation-delay: -3s; }
+      .bell { transform-box: fill-box; transform-origin: 50% 0; } .bell.ring { animation: nhp-ring .9s ease-in-out infinite; }
+      @keyframes nhp-fly { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, -5px); } }
+      @keyframes nhp-wave { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+      @keyframes nhp-ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
+      @media (prefers-reduced-motion: reduce) { .letter, .wave, .bell.ring { animation: none; } }
+      .bar { position: absolute; left: 24px; right: 24px; top: 26px; display: flex; align-items: center; gap: 12px; }
+      .menu { color: #1f2937; } .night .menu { color: #f3f4f6; }
+      .ico { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, #fff); }
+      .night .ico { background: color-mix(in srgb, var(--c) 30%, #1c2a48); }
+      .ic { width: 20px; height: 20px; fill: currentColor; }
+      .htxt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+      .title { font-size: 20px; font-weight: 700; color: #1f2937; } .subtitle { font-size: 13px; color: #4b5563; }
+      .night .title { color: #f3f4f6; } .night .subtitle { color: #cbd5e1; }
+      .pill { flex: none; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; color: color-mix(in srgb, var(--c) 70%, #111); background: color-mix(in srgb, var(--c) 16%, #fff); }
+      .round { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--c);
+               border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); background: rgba(255,255,255,.6); }
+      .night .round { background: rgba(0,0,0,.25); }
+      .round:focus-visible, .tab:focus-visible, .btn:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .tabs { display: flex; gap: 24px; padding: 0 24px; border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.2)); background: var(--card-background-color, #fff); overflow-x: auto; }
+      .tab { font: inherit; font-size: 14px; font-weight: 600; background: none; border: 0; padding: 14px 0; cursor: pointer; white-space: nowrap;
+             color: var(--secondary-text-color); border-bottom: 3px solid transparent; }
+      .tab.on { color: var(--primary-text-color); border-bottom-color: var(--accent); }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 16px; }
+      h2 { margin: 4px 0 0; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--secondary-text-color); }
+      .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+      @media (max-width: 700px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .tile, .card { position: relative; background: var(--card-background-color, #fff); border-radius: 14px; box-shadow: var(--ha-card-box-shadow, 0 1px 3px rgba(0,0,0,.08)); }
+      .tile { padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+      .tile .n { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; } .tile .k { font-size: 13px; color: var(--secondary-text-color); }
+      .tile.t-bad .n { color: var(--bad); }
+      .badge { position: absolute; right: 12px; top: 12px; width: 9px; height: 9px; border-radius: 50%; }
+      .t-bad .badge { background: var(--bad); } .t-warn .badge { background: var(--warn); } .t-ok .badge { background: var(--ok); }
+      .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+      .chip { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; cursor: pointer; color: var(--primary-text-color);
+              border: 1px solid var(--divider-color, rgba(127,127,127,.35)); background: var(--card-background-color, #fff); display: inline-flex; align-items: center; gap: 4px; }
+      .chip.on { color: #1d4ed8; border-color: #93c5fd; background: #dbeafe; } .night .chip.on { color: #bfdbfe; background: #1e3a8a; border-color: #3b5bab; }
+      .chip.static { cursor: default; background: var(--secondary-background-color, rgba(127,127,127,.1)); border-color: transparent; }
+      .chip .x { border: 0; background: none; padding: 0; cursor: pointer; color: var(--secondary-text-color); display: grid; } .chip .x .ic { width: 14px; height: 14px; }
+      .list { display: flex; flex-direction: column; gap: 6px; }
+      .row { --c: var(--ok); display: grid; grid-template-columns: 34px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 150px 130px; align-items: center; gap: 12px;
+             padding: 10px 14px; border-radius: 14px; background: var(--card-background-color, #fff); box-shadow: var(--ha-card-box-shadow, 0 1px 3px rgba(0,0,0,.06)); }
+      @media (max-width: 760px) { .row { grid-template-columns: 34px minmax(0, 1fr) auto; } .row .cell { display: none; } }
+      .row.r-bad { --c: var(--bad); background: color-mix(in srgb, var(--bad) 8%, var(--card-background-color, #fff)); }
+      .row.r-warn { --c: var(--warn); } .row.r-idle { --c: var(--idle); } .row.r-info { --c: var(--info); }
+      .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
+      .dot .ic { width: 17px; height: 17px; }
+      .txt { min-width: 0; display: flex; flex-direction: column; }
+      .nm { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sub, .cell, .muted, small { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      small { white-space: normal; }
+      .row > .tag, .row > .btn { justify-self: end; }
+      .tag { justify-self: start; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; color: color-mix(in srgb, var(--tc) 75%, var(--primary-text-color)); background: color-mix(in srgb, var(--tc) 16%, transparent); }
+      .tag.t-ok { --tc: var(--ok); } .tag.t-bad { --tc: var(--bad); } .tag.t-warn { --tc: var(--warn); } .tag.t-idle { --tc: var(--idle); } .tag.t-info { --tc: var(--info); }
+      .btn { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px; cursor: pointer; color: var(--primary-text-color);
+             background: transparent; border: 1px solid var(--divider-color, rgba(127,127,127,.35)); }
+      .btn:hover { background: color-mix(in srgb, var(--secondary-text-color) 10%, transparent); }
+      .btn.primary { color: color-mix(in srgb, var(--accent) 70%, var(--primary-text-color)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+      .btn.danger { color: color-mix(in srgb, var(--bad) 75%, var(--primary-text-color)); border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+      .btn[disabled] { opacity: .45; cursor: default; }
+      .cols { display: flex; flex-wrap: wrap; gap: 20px; } .col { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+      .card { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+      .phead { display: flex; align-items: center; gap: 10px; }
+      .p-home { --c: var(--ok); } .p-away { --c: var(--idle); }
+      .picker { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 6px; border-top: 1px solid var(--divider-color, rgba(127,127,127,.15)); }
+      .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+      .text { margin: 0; font-size: 13px; color: var(--secondary-text-color); }
+      .lvl { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; }
+      .form { gap: 14px; } .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--secondary-text-color); }
+      .field input, .field select, #new-time { font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 10px; color: var(--primary-text-color);
+             background: transparent; border: 1px solid var(--divider-color, rgba(127,127,127,.35)); }
+      .switch { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+      .stxt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+      .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+      .sw { flex: none; width: 38px; height: 22px; border-radius: 999px; background: var(--divider-color, #ccc); position: relative; transition: background .2s; }
+      .sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
+      .switch input:checked + .sw { background: var(--accent); } .switch input:checked + .sw::after { transform: translateX(16px); }
+      .switch input:focus-visible + .sw { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+      .empty { padding: 16px; color: var(--secondary-text-color); font-size: 13px; }
+      .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 10px 18px; border-radius: 999px; font-size: 13px;
+               background: var(--primary-text-color); color: var(--primary-background-color); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+    `;
+  }
+}
+
+if (!customElements.get('notify-hub-panel')) customElements.define('notify-hub-panel', NotifyHubPanel);

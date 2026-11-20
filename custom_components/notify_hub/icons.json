@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "sensor": {
+      "sent_today": { "default": "mdi:bell-ring-outline" },
+      "grouped": { "default": "mdi:tray-full" },
+      "held": { "default": "mdi:weather-night" },
+      "duplicates": { "default": "mdi:content-duplicate" },
+      "pending": { "default": "mdi:bell-alert-outline" }
+    }
+  },
+  "services": {
+    "send": { "service": "mdi:send" },
+    "acknowledge": { "service": "mdi:check-circle-outline" },
+    "send_digest": { "service": "mdi:tray-arrow-up" }
+  }
+}

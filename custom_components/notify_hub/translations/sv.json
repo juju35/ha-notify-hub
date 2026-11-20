@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "En åtgärd för alla hemmets aviseringar: efter närvaro, tysta timmar och prioritet."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub är redan konfigurerad."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notify Hub-regler",
+        "description": "Kan också ändras i Notify Hub-panelen (flikarna Regler och Inställningar).",
+        "data": {
+          "quiet_enabled": "Tysta timmar",
+          "quiet_start": "Början på tysta timmar",
+          "quiet_end": "Slut på tysta timmar",
+          "dedup_minutes": "Ignorera dubbletter i",
+          "digest_times": "Tider för sammanfattningen",
+          "escalation_first": "Upprepa efter",
+          "escalation_second": "Sedan sms efter",
+          "sms_service": "Sms-tjänst",
+          "away_mode": "Bortaläge",
+          "retention_days": "Behåll loggen"
+        },
+        "data_description": {
+          "quiet_enabled": "Varningar och info väntar tills de tysta timmarna är slut; kritiska går igenom.",
+          "dedup_minutes": "En avisering om samma ämne inom denna tid skickas inte igen (0: ignoreras aldrig).",
+          "digest_times": "När de väntande aviseringarna skickas som ett meddelande.",
+          "escalation_first": "En obekräftad kritisk avisering går igen till alla efter denna tid.",
+          "escalation_second": "Sedan till sms-tjänsten, denna tid efter första sändningen.",
+          "sms_service": "Notify-tjänst som skickar sms (t.ex. notify.free_mobile), för sista steget.",
+          "away_mode": "Är ingen hemma går info till alla i stället för sammanfattningen."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Skickade i dag"
+      },
+      "grouped": {
+        "name": "Väntar på sammanfattningen"
+      },
+      "held": {
+        "name": "Hållna av tysta timmar"
+      },
+      "duplicates": {
+        "name": "Undvikna dubbletter"
+      },
+      "pending": {
+        "name": "Kritiska att bekräfta"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Skicka",
+      "description": "Skickar en avisering via Notify Hub: efter närvaro, tysta timmar och prioritet.",
+      "fields": {
+        "message": {
+          "name": "Meddelande",
+          "description": "Aviseringens text."
+        },
+        "title": {
+          "name": "Rubrik",
+          "description": "Rubrik"
+        },
+        "priority": {
+          "name": "Prioritet",
+          "description": "critical: alla, även under tysta timmar, tills bekräftad; alert: de hemma; info: de hemma eller sammanfattningen; digest: nästa sammanfattning."
+        },
+        "topic": {
+          "name": "Ämne",
+          "description": "Två aviseringar tätt efter varandra om samma ämne räknas som en (standard: rubrik och meddelande)."
+        },
+        "source": {
+          "name": "Källa",
+          "description": "Källa"
+        },
+        "people": {
+          "name": "Personer",
+          "description": "Bara dessa personer (standard: efter prioritet och närvaro)."
+        },
+        "url": {
+          "name": "Länk",
+          "description": "Länk"
+        },
+        "data": {
+          "name": "Data",
+          "description": "Extra data till notify-tjänsterna (mobilappens alternativ)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Bekräfta",
+      "description": "Bekräftar en kritisk avisering: inga fler upprepningar, tas bort från telefonerna.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Aviseringens id (standard: alla väntande)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Skicka sammanfattningen",
+      "description": "Skickar nu det som väntar på sammanfattningen."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritisk",
+        "alert": "Varning",
+        "info": "Info",
+        "digest": "Sammanfattning"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub är inte inläst."
+    }
+  }
+}

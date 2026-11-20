@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Eine Aktion für alle Benachrichtigungen im Haus: nach Anwesenheit, Ruhezeiten und Priorität verteilt."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notify-Hub-Regeln",
+        "description": "Auch im Notify-Hub-Panel änderbar (Tabs Regeln und Einstellungen).",
+        "data": {
+          "quiet_enabled": "Ruhezeiten",
+          "quiet_start": "Beginn der Ruhezeiten",
+          "quiet_end": "Ende der Ruhezeiten",
+          "dedup_minutes": "Duplikate ignorieren für",
+          "digest_times": "Zeiten der Zusammenfassung",
+          "escalation_first": "Erneut senden nach",
+          "escalation_second": "Dann SMS nach",
+          "sms_service": "SMS-Dienst",
+          "away_mode": "Abwesenheitsmodus",
+          "retention_days": "Journal behalten"
+        },
+        "data_description": {
+          "quiet_enabled": "Warnungen und Infos warten auf das Ende der Ruhezeiten; kritische gehen durch.",
+          "dedup_minutes": "Eine Benachrichtigung zum selben Thema in dieser Zeit wird nicht erneut gesendet (0: nie ignoriert).",
+          "digest_times": "Wann die wartenden Benachrichtigungen als eine Nachricht gesendet werden.",
+          "escalation_first": "Eine unbestätigte kritische Benachrichtigung geht nach dieser Zeit erneut an alle.",
+          "escalation_second": "Dann an den SMS-Dienst, diese Zeit nach dem ersten Senden.",
+          "sms_service": "Notify-Dienst, der SMS sendet (z. B. notify.free_mobile), für die letzte Stufe.",
+          "away_mode": "Ist niemand zu Hause, gehen Infos an alle statt in die Zusammenfassung."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Heute gesendet"
+      },
+      "grouped": {
+        "name": "Wartet auf die Zusammenfassung"
+      },
+      "held": {
+        "name": "Durch Ruhezeiten zurückgehalten"
+      },
+      "duplicates": {
+        "name": "Vermiedene Duplikate"
+      },
+      "pending": {
+        "name": "Zu bestätigende kritische"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Senden",
+      "description": "Sendet eine Benachrichtigung über Notify Hub: nach Anwesenheit, Ruhezeiten und Priorität verteilt.",
+      "fields": {
+        "message": {
+          "name": "Nachricht",
+          "description": "Text der Benachrichtigung."
+        },
+        "title": {
+          "name": "Titel",
+          "description": "Titel"
+        },
+        "priority": {
+          "name": "Priorität",
+          "description": "critical: alle, auch in Ruhezeiten, bis zur Bestätigung; alert: Anwesende; info: Anwesende oder Zusammenfassung; digest: nächste Zusammenfassung."
+        },
+        "topic": {
+          "name": "Thema",
+          "description": "Zwei Benachrichtigungen zum selben Thema kurz hintereinander zählen als eine (Standard: Titel und Nachricht)."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Quelle"
+        },
+        "people": {
+          "name": "Personen",
+          "description": "Nur diese Personen (Standard: nach Priorität und Anwesenheit)."
+        },
+        "url": {
+          "name": "Link",
+          "description": "Link"
+        },
+        "data": {
+          "name": "Daten",
+          "description": "Zusätzliche Daten für die Notify-Dienste (Optionen der Mobile App)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Bestätigen",
+      "description": "Bestätigt eine kritische Benachrichtigung: keine weitere Eskalation, auf den Telefonen gelöscht.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der Benachrichtigung (Standard: alle wartenden)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Zusammenfassung senden",
+      "description": "Sendet jetzt, was auf die Zusammenfassung wartet."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritisch",
+        "alert": "Warnung",
+        "info": "Info",
+        "digest": "Zusammenfassung"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub ist nicht geladen."
+    }
+  }
+}

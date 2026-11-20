@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Jedna akcja dla wszystkich powiadomień w domu: według obecności, godzin ciszy i priorytetu."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub jest już skonfigurowany."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reguły Notify Hub",
+        "description": "Można je też zmieniać w panelu Notify Hub (karty Reguły i Ustawienia).",
+        "data": {
+          "quiet_enabled": "Godziny ciszy",
+          "quiet_start": "Początek godzin ciszy",
+          "quiet_end": "Koniec godzin ciszy",
+          "dedup_minutes": "Ignoruj duplikaty przez",
+          "digest_times": "Godziny podsumowania",
+          "escalation_first": "Ponów po",
+          "escalation_second": "Potem SMS po",
+          "sms_service": "Usługa SMS",
+          "away_mode": "Tryb nieobecności",
+          "retention_days": "Przechowuj dziennik"
+        },
+        "data_description": {
+          "quiet_enabled": "Alerty i informacje czekają na koniec godzin ciszy; krytyczne przechodzą.",
+          "dedup_minutes": "Powiadomienie o tym samym temacie w tym czasie nie jest wysyłane ponownie (0: nigdy nie ignorowane).",
+          "digest_times": "Kiedy oczekujące powiadomienia są wysyłane jako jedna wiadomość.",
+          "escalation_first": "Niepotwierdzone powiadomienie krytyczne trafia ponownie do wszystkich po tym czasie.",
+          "escalation_second": "Potem do usługi SMS, tyle czasu po pierwszym wysłaniu.",
+          "sms_service": "Usługa notify wysyłająca SMS (np. notify.free_mobile), na ostatni krok.",
+          "away_mode": "Gdy nikogo nie ma w domu, informacje trafiają do wszystkich zamiast do podsumowania."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Wysłane dziś"
+      },
+      "grouped": {
+        "name": "Czekające na podsumowanie"
+      },
+      "held": {
+        "name": "Wstrzymane przez ciszę"
+      },
+      "duplicates": {
+        "name": "Uniknięte duplikaty"
+      },
+      "pending": {
+        "name": "Krytyczne do potwierdzenia"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Wyślij",
+      "description": "Wysyła powiadomienie przez Notify Hub: według obecności, godzin ciszy i priorytetu.",
+      "fields": {
+        "message": {
+          "name": "Wiadomość",
+          "description": "Treść powiadomienia."
+        },
+        "title": {
+          "name": "Tytuł",
+          "description": "Tytuł"
+        },
+        "priority": {
+          "name": "Priorytet",
+          "description": "critical: wszyscy, także w ciszy, do potwierdzenia; alert: obecni; info: obecni lub podsumowanie; digest: następne podsumowanie."
+        },
+        "topic": {
+          "name": "Temat",
+          "description": "Dwa powiadomienia o tym samym temacie w krótkim odstępie liczą się jako jedno (domyślnie: tytuł i treść)."
+        },
+        "source": {
+          "name": "Źródło",
+          "description": "Źródło"
+        },
+        "people": {
+          "name": "Osoby",
+          "description": "Tylko te osoby (domyślnie: według priorytetu i obecności)."
+        },
+        "url": {
+          "name": "Link",
+          "description": "Link"
+        },
+        "data": {
+          "name": "Dane",
+          "description": "Dodatkowe dane dla usług notify (opcje aplikacji mobilnej)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Potwierdź",
+      "description": "Potwierdza powiadomienie krytyczne: koniec eskalacji, usunięte z telefonów.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Id powiadomienia (domyślnie: wszystkie oczekujące)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Wyślij podsumowanie",
+      "description": "Wysyła teraz to, co czeka na podsumowanie."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Krytyczne",
+        "alert": "Alert",
+        "info": "Informacja",
+        "digest": "Podsumowanie"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub nie jest załadowany."
+    }
+  }
+}

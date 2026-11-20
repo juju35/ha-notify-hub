@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "O singură acțiune pentru toate notificările casei: după prezență, ore de liniște și prioritate."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub este deja configurat."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reguli Notify Hub",
+        "description": "Se pot modifica și în panoul Notify Hub (filele Reguli și Setări).",
+        "data": {
+          "quiet_enabled": "Ore de liniște",
+          "quiet_start": "Începutul orelor de liniște",
+          "quiet_end": "Sfârșitul orelor de liniște",
+          "dedup_minutes": "Ignoră duplicatele timp de",
+          "digest_times": "Orele rezumatului",
+          "escalation_first": "Retrimite după",
+          "escalation_second": "Apoi SMS după",
+          "sms_service": "Serviciu SMS",
+          "away_mode": "Mod absență",
+          "retention_days": "Păstrează jurnalul"
+        },
+        "data_description": {
+          "quiet_enabled": "Alertele și informările așteaptă sfârșitul orelor de liniște; cele critice trec.",
+          "dedup_minutes": "O notificare pe același subiect în acest interval nu se retrimite (0: niciodată ignorată).",
+          "digest_times": "Când notificările în așteptare pleacă, într-un singur mesaj.",
+          "escalation_first": "O notificare critică neconfirmată pleacă din nou către toți după acest interval.",
+          "escalation_second": "Apoi către serviciul SMS, la acest interval după primul trimis.",
+          "sms_service": "Serviciu notify care trimite SMS (ex. notify.free_mobile), pentru ultimul pas.",
+          "away_mode": "Când nu e nimeni acasă, informările merg la toți în loc să aștepte rezumatul."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Trimise azi"
+      },
+      "grouped": {
+        "name": "În așteptarea rezumatului"
+      },
+      "held": {
+        "name": "Reținute de liniște"
+      },
+      "duplicates": {
+        "name": "Duplicate evitate"
+      },
+      "pending": {
+        "name": "Critice de confirmat"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Trimite",
+      "description": "Trimite o notificare prin Notify Hub: după prezență, ore de liniște și prioritate.",
+      "fields": {
+        "message": {
+          "name": "Mesaj",
+          "description": "Textul notificării."
+        },
+        "title": {
+          "name": "Titlu",
+          "description": "Titlu"
+        },
+        "priority": {
+          "name": "Prioritate",
+          "description": "critical: toți, chiar și în liniște, până la confirmare; alert: cei prezenți; info: cei prezenți sau rezumatul; digest: următorul rezumat."
+        },
+        "topic": {
+          "name": "Subiect",
+          "description": "Două notificări apropiate pe același subiect contează ca una (implicit: titlu și mesaj)."
+        },
+        "source": {
+          "name": "Sursă",
+          "description": "Sursă"
+        },
+        "people": {
+          "name": "Persoane",
+          "description": "Doar aceste persoane (implicit: după prioritate și prezență)."
+        },
+        "url": {
+          "name": "Link",
+          "description": "Link"
+        },
+        "data": {
+          "name": "Date",
+          "description": "Date suplimentare pentru serviciile notify (opțiunile aplicației mobile)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Confirmă",
+      "description": "Confirmă o notificare critică: fără alte retrimiteri, ștearsă de pe telefoane.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Id-ul notificării (implicit: toate cele în așteptare)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Trimite rezumatul",
+      "description": "Trimite acum ce așteaptă rezumatul."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Critică",
+        "alert": "Alertă",
+        "info": "Informare",
+        "digest": "Rezumat"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub nu este încărcat."
+    }
+  }
+}

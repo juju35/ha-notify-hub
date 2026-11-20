@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Jedna akce pro všechna oznámení v domě: podle přítomnosti, tichých hodin a priority."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub je již nastaven."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pravidla Notify Hub",
+        "description": "Lze je měnit i v panelu Notify Hub (karty Pravidla a Nastavení).",
+        "data": {
+          "quiet_enabled": "Tiché hodiny",
+          "quiet_start": "Začátek tichých hodin",
+          "quiet_end": "Konec tichých hodin",
+          "dedup_minutes": "Ignorovat duplikáty po dobu",
+          "digest_times": "Časy přehledu",
+          "escalation_first": "Zopakovat po",
+          "escalation_second": "Pak SMS po",
+          "sms_service": "Služba SMS",
+          "away_mode": "Režim nepřítomnosti",
+          "retention_days": "Uchovávat deník"
+        },
+        "data_description": {
+          "quiet_enabled": "Výstrahy a informace čekají na konec tichých hodin; kritické projdou.",
+          "dedup_minutes": "Oznámení na stejné téma v této době se znovu neodešle (0: nikdy se neignoruje).",
+          "digest_times": "Kdy se čekající oznámení odešlou jako jedna zpráva.",
+          "escalation_first": "Nepotvrzené kritické oznámení jde znovu všem po této době.",
+          "escalation_second": "Pak službě SMS, tuto dobu po prvním odeslání.",
+          "sms_service": "Služba notify, která posílá SMS (např. notify.free_mobile), pro poslední krok.",
+          "away_mode": "Když nikdo není doma, informace jdou všem místo přehledu."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Odesláno dnes"
+      },
+      "grouped": {
+        "name": "Čeká na přehled"
+      },
+      "held": {
+        "name": "Zadrženo tichými hodinami"
+      },
+      "duplicates": {
+        "name": "Zabráněné duplikáty"
+      },
+      "pending": {
+        "name": "Kritická k potvrzení"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Odeslat",
+      "description": "Odešle oznámení přes Notify Hub: podle přítomnosti, tichých hodin a priority.",
+      "fields": {
+        "message": {
+          "name": "Zpráva",
+          "description": "Text oznámení."
+        },
+        "title": {
+          "name": "Název",
+          "description": "Název"
+        },
+        "priority": {
+          "name": "Priorita",
+          "description": "critical: všichni, i v tichých hodinách, do potvrzení; alert: přítomní; info: přítomní nebo přehled; digest: další přehled."
+        },
+        "topic": {
+          "name": "Téma",
+          "description": "Dvě blízká oznámení na stejné téma se počítají jako jedno (výchozí: název a zpráva)."
+        },
+        "source": {
+          "name": "Zdroj",
+          "description": "Zdroj"
+        },
+        "people": {
+          "name": "Osoby",
+          "description": "Pouze tyto osoby (výchozí: podle priority a přítomnosti)."
+        },
+        "url": {
+          "name": "Odkaz",
+          "description": "Odkaz"
+        },
+        "data": {
+          "name": "Data",
+          "description": "Další data pro služby notify (možnosti mobilní aplikace)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Potvrdit",
+      "description": "Potvrdí kritické oznámení: žádné další opakování, smaže se z telefonů.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID oznámení (výchozí: všechna čekající)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Odeslat přehled",
+      "description": "Odešle nyní to, co čeká na přehled."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritické",
+        "alert": "Výstraha",
+        "info": "Informace",
+        "digest": "Přehled"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub není načten."
+    }
+  }
+}

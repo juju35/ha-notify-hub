@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Eén actie voor alle meldingen in huis: verdeeld op aanwezigheid, stille uren en prioriteit."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub is al ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notify Hub-regels",
+        "description": "Ook te wijzigen in het Notify Hub-paneel (tabbladen Regels en Instellingen).",
+        "data": {
+          "quiet_enabled": "Stille uren",
+          "quiet_start": "Begin stille uren",
+          "quiet_end": "Einde stille uren",
+          "dedup_minutes": "Dubbele meldingen negeren gedurende",
+          "digest_times": "Tijden van het overzicht",
+          "escalation_first": "Opnieuw na",
+          "escalation_second": "Dan sms na",
+          "sms_service": "Sms-dienst",
+          "away_mode": "Afwezigheidsmodus",
+          "retention_days": "Logboek bewaren"
+        },
+        "data_description": {
+          "quiet_enabled": "Waarschuwingen en info wachten tot het einde van de stille uren; kritieke gaan door.",
+          "dedup_minutes": "Een melding over hetzelfde onderwerp binnen deze tijd wordt niet opnieuw verstuurd (0: nooit genegeerd).",
+          "digest_times": "Wanneer de wachtende meldingen als één bericht worden verstuurd.",
+          "escalation_first": "Een onbevestigde kritieke melding gaat na deze tijd opnieuw naar iedereen.",
+          "escalation_second": "Dan naar de sms-dienst, deze tijd na het eerste versturen.",
+          "sms_service": "Notify-dienst die sms verstuurt (bv. notify.free_mobile), voor de laatste stap.",
+          "away_mode": "Is niemand thuis, dan gaat info naar iedereen in plaats van naar het overzicht."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Vandaag verstuurd"
+      },
+      "grouped": {
+        "name": "Wacht op het overzicht"
+      },
+      "held": {
+        "name": "Vastgehouden door stille uren"
+      },
+      "duplicates": {
+        "name": "Dubbele vermeden"
+      },
+      "pending": {
+        "name": "Kritiek te bevestigen"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Versturen",
+      "description": "Verstuurt een melding via Notify Hub: verdeeld op aanwezigheid, stille uren en prioriteit.",
+      "fields": {
+        "message": {
+          "name": "Bericht",
+          "description": "Tekst van de melding."
+        },
+        "title": {
+          "name": "Titel",
+          "description": "Titel"
+        },
+        "priority": {
+          "name": "Prioriteit",
+          "description": "critical: iedereen, ook in stille uren, tot bevestiging; alert: aanwezigen; info: aanwezigen of het overzicht; digest: volgend overzicht."
+        },
+        "topic": {
+          "name": "Onderwerp",
+          "description": "Twee meldingen kort na elkaar over hetzelfde onderwerp tellen als één (standaard: titel en bericht)."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Bron"
+        },
+        "people": {
+          "name": "Personen",
+          "description": "Alleen deze personen (standaard: op prioriteit en aanwezigheid)."
+        },
+        "url": {
+          "name": "Link",
+          "description": "Link"
+        },
+        "data": {
+          "name": "Gegevens",
+          "description": "Extra gegevens voor de notify-diensten (opties van de mobiele app)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Bevestigen",
+      "description": "Bevestigt een kritieke melding: geen escalatie meer, gewist op de telefoons.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Id van de melding (standaard: alle wachtende)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Overzicht versturen",
+      "description": "Verstuurt nu wat op het overzicht wacht."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritiek",
+        "alert": "Waarschuwing",
+        "info": "Info",
+        "digest": "Overzicht"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub is niet geladen."
+    }
+  }
+}

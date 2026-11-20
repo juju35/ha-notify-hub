@@ -1,0 +1,14 @@
+{
+  "domain": "notify_hub",
+  "name": "Notify Hub",
+  "after_dependencies": ["frontend", "http", "lovelace", "mobile_app", "notify", "person", "websocket_api"],
+  "codeowners": ["@juju35"],
+  "config_flow": true,
+  "documentation": "https://github.com/juju35/ha-notify-hub",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/juju35/ha-notify-hub/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}

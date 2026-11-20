@@ -1,0 +1,130 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Notify Hub",
+        "description": "Én handling for alle husets notifikationer: efter tilstedeværelse, stille timer og prioritet."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Notify Hub er allerede sat op."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notify Hub-regler",
+        "description": "Kan også ændres i Notify Hub-panelet (fanerne Regler og Indstillinger).",
+        "data": {
+          "quiet_enabled": "Stille timer",
+          "quiet_start": "Start på stille timer",
+          "quiet_end": "Slut på stille timer",
+          "dedup_minutes": "Ignorer dubletter i",
+          "digest_times": "Tidspunkter for oversigten",
+          "escalation_first": "Gentag efter",
+          "escalation_second": "Derefter sms efter",
+          "sms_service": "Sms-tjeneste",
+          "away_mode": "Fraværstilstand",
+          "retention_days": "Behold journalen"
+        },
+        "data_description": {
+          "quiet_enabled": "Advarsler og info venter til de stille timer er slut; kritiske går igennem.",
+          "dedup_minutes": "En notifikation om samme emne inden for denne tid sendes ikke igen (0: aldrig ignoreret).",
+          "digest_times": "Hvornår de ventende notifikationer sendes som én besked.",
+          "escalation_first": "En ubekræftet kritisk notifikation går igen til alle efter denne tid.",
+          "escalation_second": "Derefter til sms-tjenesten, denne tid efter første afsendelse.",
+          "sms_service": "Notify-tjeneste der sender sms (f.eks. notify.free_mobile), til sidste trin.",
+          "away_mode": "Er ingen hjemme, går info til alle i stedet for oversigten."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "sent_today": {
+        "name": "Sendt i dag"
+      },
+      "grouped": {
+        "name": "Venter på oversigten"
+      },
+      "held": {
+        "name": "Holdt tilbage af stille timer"
+      },
+      "duplicates": {
+        "name": "Undgåede dubletter"
+      },
+      "pending": {
+        "name": "Kritiske at bekræfte"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Send",
+      "description": "Sender en notifikation via Notify Hub: efter tilstedeværelse, stille timer og prioritet.",
+      "fields": {
+        "message": {
+          "name": "Besked",
+          "description": "Notifikationens tekst."
+        },
+        "title": {
+          "name": "Titel",
+          "description": "Titel"
+        },
+        "priority": {
+          "name": "Prioritet",
+          "description": "critical: alle, også i stille timer, indtil bekræftet; alert: de hjemme; info: de hjemme eller oversigten; digest: næste oversigt."
+        },
+        "topic": {
+          "name": "Emne",
+          "description": "To notifikationer tæt på hinanden om samme emne tæller som én (standard: titel og besked)."
+        },
+        "source": {
+          "name": "Kilde",
+          "description": "Kilde"
+        },
+        "people": {
+          "name": "Personer",
+          "description": "Kun disse personer (standard: efter prioritet og tilstedeværelse)."
+        },
+        "url": {
+          "name": "Link",
+          "description": "Link"
+        },
+        "data": {
+          "name": "Data",
+          "description": "Ekstra data til notify-tjenesterne (mobilappens indstillinger)."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Bekræft",
+      "description": "Bekræfter en kritisk notifikation: ingen flere gentagelser, fjernet fra telefonerne.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Notifikationens id (standard: alle ventende)."
+        }
+      }
+    },
+    "send_digest": {
+      "name": "Send oversigten",
+      "description": "Sender nu det, der venter på oversigten."
+    }
+  },
+  "selector": {
+    "priority": {
+      "options": {
+        "critical": "Kritisk",
+        "alert": "Advarsel",
+        "info": "Info",
+        "digest": "Oversigt"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Notify Hub er ikke indlæst."
+    }
+  }
+}

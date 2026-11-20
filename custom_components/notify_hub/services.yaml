@@ -1,0 +1,48 @@
+send:
+  fields:
+    message:
+      required: true
+      example: "Water leak in the kitchen"
+      selector:
+        text:
+          multiline: true
+    title:
+      example: "Leak"
+      selector:
+        text:
+    priority:
+      default: info
+      selector:
+        select:
+          translation_key: priority
+          options:
+            - critical
+            - alert
+            - info
+            - digest
+    topic:
+      example: "leak_kitchen"
+      selector:
+        text:
+    source:
+      example: "Safety"
+      selector:
+        text:
+    people:
+      selector:
+        entity:
+          domain: person
+          multiple: true
+    url:
+      example: "/lovelace/home"
+      selector:
+        text:
+    data:
+      selector:
+        object:
+acknowledge:
+  fields:
+    id:
+      selector:
+        text:
+send_digest:
