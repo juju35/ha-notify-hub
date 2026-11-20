@@ -6,7 +6,7 @@ from datetime import timedelta
 from typing import Any
 
 import pytest
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
@@ -27,19 +27,6 @@ from custom_components.notify_hub.hub import in_window, parse_time
 ANNE = "notify.mobile_app_anne_phone"
 BEN = "notify.mobile_app_ben_phone"
 SMS = "notify.sms"
-
-
-@pytest.fixture
-def sent(hass: HomeAssistant) -> list[tuple[str, dict[str, Any]]]:
-    """Every call to the fake notify services, as (service, data)."""
-    calls: list[tuple[str, dict[str, Any]]] = []
-
-    async def record(call: ServiceCall) -> None:
-        calls.append((f"notify.{call.service}", dict(call.data)))
-
-    for name in ("mobile_app_anne_phone", "mobile_app_ben_phone", "sms"):
-        hass.services.async_register("notify", name, record)
-    return calls
 
 
 def people(hass: HomeAssistant, anne: str = "home", ben: str = "not_home") -> None:

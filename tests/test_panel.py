@@ -69,6 +69,9 @@ async def test_panel_needs_the_frontend(hass: HomeAssistant) -> None:
     """Without the frontend (tests, minimal setups) nothing is registered and nothing fails."""
     await panel.async_register_panel(hass)
     panel.async_unregister_panel(hass)
-    assert panel._version() == __import__("json").loads(
-        (panel.FRONTEND_DIR.parent / "manifest.json").read_text(encoding="utf-8")
-    )["version"]
+    assert (
+        panel._version()
+        == __import__("json").loads((panel.FRONTEND_DIR.parent / "manifest.json").read_text(encoding="utf-8"))[
+            "version"
+        ]
+    )

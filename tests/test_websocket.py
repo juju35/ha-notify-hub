@@ -10,7 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from custom_components.notify_hub.const import CONF_HIDE_HEADER, CONF_PEOPLE, CONF_SMS_SERVICE, DOMAIN
 from custom_components.notify_hub.diagnostics import async_get_config_entry_diagnostics
 
-from .test_hub import ANNE, people, send, sent, setup_hub  # noqa: F401 — `sent` is a fixture
+from .test_hub import ANNE, people, send, setup_hub
 
 
 async def _ws(client, **message: Any) -> dict[str, Any]:
