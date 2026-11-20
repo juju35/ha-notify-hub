@@ -6,6 +6,8 @@
 
 - Panel: the top bar can be hidden (Settings tab, `hide_header`), the tabs staying with the menu and the buttons, like the other ha-* panels
 - Card: the header illustration (`illustration_theme`) is in the visual editor
+- Card: the header scene sits in the bottom-right corner, under the status pill (70 px high), so the title and subtitle stay clear at every width
+- Card and panel: every count tile carries its state badge (grey at zero)
 
 ### Fixes
 
@@ -16,6 +18,7 @@
 - Card: the notification ages ("3 min") move on by themselves
 - Panel: "nobody" and "failed" statuses translated; tabs reachable with the arrow keys; the toast is announced to screen readers
 - A phone renamed in Home Assistant still gets its notifications (the Companion app service is named after the registered device name)
+- A digest nobody can receive (no channel, or every channel failing) keeps its notifications queued for the next digest instead of dropping them as "nobody"
 - The actions work on Home Assistant 2024.12 (the documented minimum): `async_loaded_entries` only came later
 
 ### Performance
