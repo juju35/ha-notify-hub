@@ -210,3 +210,50 @@ async def test_found_channels(hass: HomeAssistant, sent) -> None:
     entry = await setup_hub(hass, **{CONF_PEOPLE: {}})
     hub = entry.runtime_data
     assert hub.people()[0]["channels"] == [ANNE] and not hub.people()[0]["custom"]
+
+
+async def test_found_channels_after_a_rename(hass: HomeAssistant, sent) -> None:
+    """A phone renamed in Home Assistant keeps its notify service (named after the registered device name)."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    app = MockConfigEntry(domain="mobile_app")
+    app.add_to_hass(hass)
+    registry = dr.async_get(hass)
+    device = registry.async_get_or_create(
+        config_entry_id=app.entry_id, identifiers={("mobile_app", "x")}, name="Anne Phone"
+    )
+    registry.async_update_device(device.id, name_by_user="Kitchen tablet")
+    tracker = er.async_get(hass).async_get_or_create(
+        "device_tracker", "mobile_app", "x", device_id=device.id, config_entry=app
+    )
+    hass.states.async_set("person.anne", "home", {"friendly_name": "Anne", "device_trackers": [tracker.entity_id]})
+    entry = await setup_hub(hass, **{CONF_PEOPLE: {}})
+    assert entry.runtime_data.people()[0]["channels"] == [ANNE]
+
+
+async def test_counts_follow_the_journal(hass: HomeAssistant, sent) -> None:
+    """The counts are cached between changes, and recomputed at each one."""
+    people(hass)
+    entry = await setup_hub(hass)
+    hub = entry.runtime_data
+    assert hub.counts()["sent_today"] == 0
+    await send(hass, message="One", priority="info")
+    assert hub.counts()["sent_today"] == 1
+    counted = hub.counts()
+    counted["sent_today"] = 99  # a copy: the cache is not changed by the caller
+    assert hub.counts()["sent_today"] == 1
+    await send(hass, message="Two", priority="digest")
+    assert hub.counts()["grouped"] == 1
+
+
+async def test_services_need_the_hub(hass: HomeAssistant, sent) -> None:
+    """The actions answer with a clear error while the hub is not loaded."""
+    from homeassistant.exceptions import ServiceValidationError
+
+    people(hass)
+    entry = await setup_hub(hass)
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    with pytest.raises(ServiceValidationError):
+        await send(hass, message="Nobody listens")
