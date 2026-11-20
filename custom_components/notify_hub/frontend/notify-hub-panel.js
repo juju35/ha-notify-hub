@@ -324,10 +324,11 @@ class NotifyHubPanel extends HTMLElement {
   _journal(d, t) {
     var c = d.counts || {};
     var tiles = [
-      ['c_sent', c.sent_today, ''],
-      ['c_grouped', c.grouped, c.grouped ? 'warn' : ''],
-      ['c_duplicates', c.duplicates, c.duplicates ? 'ok' : ''],
-      ['c_pending', c.pending, c.pending ? 'bad' : ''],
+      // Every tile has its state badge: the tone of its count, grey (idle) at zero.
+      ['c_sent', c.sent_today, c.sent_today ? 'ok' : 'idle'],
+      ['c_grouped', c.grouped, c.grouped ? 'warn' : 'idle'],
+      ['c_duplicates', c.duplicates, c.duplicates ? 'ok' : 'idle'],
+      ['c_pending', c.pending, c.pending ? 'bad' : 'idle'],
     ]
       .map(([k, v, cls]) => `<div class="tile${cls ? ` t-${cls}` : ''}"><span class="n">${nhpEsc(v ?? 0)}</span><span class="k">${nhpEsc(t[k])}</span>${cls ? '<span class="badge"></span>' : ''}</div>`)
       .join('');
@@ -498,7 +499,7 @@ class NotifyHubPanel extends HTMLElement {
       .tile .n { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; } .tile .k { font-size: 13px; color: var(--secondary-text-color); }
       .tile.t-bad .n { color: var(--bad); }
       .badge { position: absolute; right: 12px; top: 12px; width: 9px; height: 9px; border-radius: 50%; }
-      .t-bad .badge { background: var(--bad); } .t-warn .badge { background: var(--warn); } .t-ok .badge { background: var(--ok); }
+      .t-bad .badge { background: var(--bad); } .t-warn .badge { background: var(--warn); } .t-ok .badge { background: var(--ok); } .t-idle .badge { background: var(--idle); }
       .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
       .chip { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; cursor: pointer; color: var(--primary-text-color);
               border: 1px solid var(--divider-color, rgba(127,127,127,.35)); background: var(--card-background-color, #fff); display: inline-flex; align-items: center; gap: 4px; }

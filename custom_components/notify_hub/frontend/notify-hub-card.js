@@ -216,10 +216,11 @@ class NotifyHubCard extends HTMLElement {
       subtitle = a.quiet && a.quiet_hours ? nhFill(t.quiet_until, { t: a.quiet_hours[1] }) : counts.grouped && a.next_digest ? nhFill(t.next_digest, { t: a.next_digest }) : nhFill(t.sent, {}) + ` · ${counts.sent_today || 0}`;
       pill = pending ? nhFill(t.critical_n, { n: pending }) : t.all_quiet;
       var tiles = [
-        ['sent', counts.sent_today, ''],
-        ['grouped', counts.grouped, counts.grouped ? 'warn' : ''],
-        ['held', counts.held, counts.held ? 'idle' : ''],
-        ['pending', pending, pending ? 'bad' : ''],
+        // Every tile has its state badge: the tone of its count, grey (idle) at zero.
+        ['sent', counts.sent_today, counts.sent_today ? 'ok' : 'idle'],
+        ['grouped', counts.grouped, counts.grouped ? 'warn' : 'idle'],
+        ['held', counts.held, 'idle'],
+        ['pending', pending, pending ? 'bad' : 'idle'],
       ]
         .map(([k, v, cls]) => `<div class="tile${cls ? ` t-${cls}` : ''}" data-key="${k}"><span class="n">${nhEsc(v ?? 0)}</span><span class="k">${nhEsc(t[k])}</span>${cls ? '<span class="badge"></span>' : ''}</div>`)
         .join('');
@@ -287,7 +288,7 @@ class NotifyHubCard extends HTMLElement {
       .night .banner { background: linear-gradient(#0f1b33, #1c2a48); }
       .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #93c5fd; }
       .night .ground { background: #36507e; }
-      .scene { position: absolute; right: 96px; bottom: 6px; height: 84px; width: auto; max-width: 52%; }
+      .scene { position: absolute; right: 8px; bottom: 6px; height: 70px; width: auto; max-width: 46%; }
       .letter rect { fill: #fff; stroke: #93c5fd; stroke-width: 2; } .letter path { fill: none; stroke: #93c5fd; stroke-width: 2; }
       .night .letter rect { fill: #e6ebf3; stroke: #5b7bb3; } .night .letter path { stroke: #5b7bb3; }
       .bbody { fill: #93c5fd; } .brim, .bclap { fill: #60a5fa; }
@@ -322,7 +323,7 @@ class NotifyHubCard extends HTMLElement {
       .tile .k { font-size: 12px; line-height: 1.2; color: var(--secondary-text-color); }
       .tile.t-bad .n { color: var(--nh-bad); }
       .badge { position: absolute; right: 9px; top: 9px; width: 8px; height: 8px; border-radius: 50%; }
-      .t-bad .badge { background: var(--nh-bad); } .t-warn .badge { background: var(--nh-warn); } .t-idle .badge { background: var(--nh-idle); }
+      .t-ok .badge { background: var(--nh-ok); } .t-bad .badge { background: var(--nh-bad); } .t-warn .badge { background: var(--nh-warn); } .t-idle .badge { background: var(--nh-idle); }
       .list { display: flex; flex-direction: column; gap: 6px; }
       .row { --c: var(--nh-ok); display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; border-radius: 12px;
              background: var(--secondary-background-color, rgba(127,127,127,.08)); }
