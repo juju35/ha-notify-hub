@@ -54,6 +54,7 @@ from .const import (
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DEFAULT_RETENTION_DAYS,
+    DOMAIN,
     EVENT_ACTION,
     EVENT_SENT,
     MAX_JOURNAL,
@@ -221,7 +222,8 @@ class NotifyHub:
 
     def notify_services(self) -> list[str]:
         """Every notify service, for the panel's channel pickers."""
-        return sorted(f"notify.{name}" for name in self.hass.services.async_services().get("notify", {}))
+        services = self.hass.services.async_services().get("notify", {})
+        return sorted(f"notify.{name}" for name in services if name != DOMAIN)  # not the hub itself: a loop
 
     def _targets(self, names: list[str] | None, *, present_only: bool) -> list[dict[str, Any]]:
         """The people to notify: those named (entity or name), else those at home (`present_only`), else everyone."""
@@ -380,7 +382,7 @@ class NotifyHub:
 
     async def _call(self, channel: str, entry: dict[str, Any], *, critical: bool) -> bool:
         domain, _, service = channel.partition(".")
-        if domain != "notify" or not self.hass.services.has_service(domain, service):
+        if domain != "notify" or service == DOMAIN or not self.hass.services.has_service(domain, service):
             _LOGGER.warning("Notify Hub: %s is not a notify service", channel)
             return False
         payload: dict[str, Any] = {"message": entry["message"]}

@@ -28,10 +28,11 @@ from .const import (
     SERVICE_SEND_DIGEST,
 )
 from .hub import NotifyHub
+from .notify import async_register_notify_service, async_remove_notify_service
 from .panel import async_register_panel, async_remove_card, async_unregister_panel
 from .websocket import async_register_websocket
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.NOTIFY, Platform.SENSOR]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 type NotifyHubConfigEntry = ConfigEntry[NotifyHub]
@@ -106,6 +107,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NotifyHubConfigEntry) ->
     await hub.async_load()
     entry.runtime_data = hub
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    async_register_notify_service(hass, hub)
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     await async_register_panel(hass)
     return True
@@ -119,6 +121,7 @@ async def _async_options_updated(hass: HomeAssistant, entry: NotifyHubConfigEntr
 async def async_unload_entry(hass: HomeAssistant, entry: NotifyHubConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
+        async_remove_notify_service(hass)
         await entry.runtime_data.async_unload()
         async_unregister_panel(hass)
     return unloaded

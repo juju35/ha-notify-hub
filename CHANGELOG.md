@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 - 2026-11-21
+
+### Features
+
+- The hub as a notify target: a `notify.notify_hub` action (`message`, `title`, `target` for the people, `data` with the hub's `priority`, `topic`, `source`, `url`) and a `notify.notify_hub` entity for `notify.send_message` — pick it in any integration that asks for a notify service, and its notifications follow the hub's rules
+- Sources: a notification sent by an integration (through `notify.notify_hub` or `notify_hub.send`) is filed under that integration, found from the call
+- The hub never lists or calls itself as a channel (no loop)
+
 ## 0.4.0 - 2026-11-21
 
 ### Features

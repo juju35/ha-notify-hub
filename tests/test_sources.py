@@ -154,7 +154,7 @@ async def test_capture_persistent(hass: HomeAssistant, sent) -> None:
     hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_CAPTURE_PERSISTENT: True})
     await hass.async_block_till_done()
     persistent_notification.async_create(hass, "Bridge found", "Acme", "acme_discovery")
-    persistent_notification.async_create(hass, "Login attempt", None, "http-login")
+    persistent_notification.async_create(hass, "Login attempt", None, "unknown-login")
     await hass.async_block_till_done()
     journal = hub_of(hass).journal
     assert [e["source_key"] for e in journal] == ["homeassistant", "acme"]
