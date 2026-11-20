@@ -32,7 +32,7 @@ from .const import (
     VERSION,
 )
 from .hub import NotifyHub, parse_time
-from .sources import SOURCES_SCHEMA, clean_sources
+from .sources import SOURCES_SCHEMA, clean_sources, integrations
 
 # What the panel may change, and how each value is checked.
 OPTION_SCHEMA = vol.Schema(
@@ -96,6 +96,7 @@ def ws_state(hass: HomeAssistant, connection: websocket_api.ActiveConnection, ms
             "people": hub.people(),
             "services": hub.notify_services(),
             "sources": hub.sources(),
+            "integrations": integrations(hass),
             "options": dict(hub.entry.options),
         },
     )

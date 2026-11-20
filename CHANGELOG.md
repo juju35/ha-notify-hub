@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - 2026-11-21
+
+### Features
+
+- Sources tab: set a source's people (and its other rules) ahead of its first notification — pick any loaded integration in the list
+- Source cards name the people a source is reserved for; the Routing tab lists, under each person, the sources reserved for them
+
 ## 0.3.0 - 2026-11-21
 
 ### Features

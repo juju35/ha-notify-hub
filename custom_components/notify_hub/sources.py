@@ -138,6 +138,13 @@ def resolve(hass: HomeAssistant, source: str | None, context: Context | None = N
     return {"key": caller.entity_id, "name": name, "domain": None, "origin": None}
 
 
+def integrations(hass: HomeAssistant) -> list[dict[str, str]]:
+    """The loaded integrations a source can be set for ahead of its first notification, by name."""
+    domains = {d for d in hass.config.components if is_integration(hass, d) and d not in NEUTRAL_PLATFORMS}
+    found = [{"domain": d, "name": integration_name(hass, d)} for d in domains]
+    return sorted(found, key=lambda i: i["name"].lower())
+
+
 def guess_domain(hass: HomeAssistant, notification_id: str) -> str | None:
     """The integration a persistent notification belongs to, read from the start of its id (`<domain>_…`)."""
     candidates = [d for d in hass.config.components if "." not in d and d not in _ENTITY_DOMAINS]
