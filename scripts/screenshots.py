@@ -86,7 +86,7 @@ SOURCES = [
     _source("Doors", 9, 12, {"color": "#f59e0b", "ignore_quiet": True}, ("Front door left open",)),
     _source("Laundry", 6, 3, {"color": "#0ea5e9"}, ("Washing machine finished", "Dryer finished")),
     _source("Batteries", 4, 95, {"priority": "digest"}, ("Low batteries",)),
-    _source("Safety", 2, 1, {"color": "#ef4444", "priority": "critical"}, ("Water leak",)),
+    _source("Safety", 2, 1, {"color": "#ef4444", "priority": "critical", "people": ["person.alex"]}, ("Water leak",)),
     _source("Garden", 2, 300, {"muted": True}, ("Rain sensor",)),
     _source("Kitchen", 1, 48, None, ("Dishwasher finished",)),
 ]
@@ -153,6 +153,10 @@ PANEL_STATE = {
         "sources": {s["key"]: s["rule"] for s in SOURCES if s["rule"]},
     },
     "sources": SOURCES,
+    "integrations": [
+        {"domain": "zha", "name": "Zigbee Home Automation"},
+        {"domain": "mobile_app", "name": "Mobile App"},
+    ],
 }
 
 # Card shots: (file stem, journal) — the calm card and the one waiting for an acknowledgement.

@@ -75,7 +75,7 @@ from .const import (
     STORAGE_VERSION,
     TICK,
 )
-from .sources import resolve
+from .sources import integration_name, is_integration, resolve
 from .strings import text
 
 _LOGGER = logging.getLogger(__name__)
@@ -659,9 +659,20 @@ class NotifyHub:
             if (origin := entry.get("origin")) and origin not in item["origins"] and len(item["origins"]) < 5:
                 item["origins"].append(origin)
         for key, rule in (self.options.get(CONF_SOURCES) or {}).items():
-            item = seen.setdefault(
-                key, {"key": key, "name": key, "domain": None, "origins": [], "count": 0, "muted": 0, "last": None}
-            )
+            if key not in seen:
+                # Set ahead of its first notification: an integration shows its name and logo already.
+                domain = key if is_integration(self.hass, key) else None
+                name = integration_name(self.hass, key) if domain else key
+                seen[key] = {
+                    "key": key,
+                    "name": name,
+                    "domain": domain,
+                    "origins": [],
+                    "count": 0,
+                    "muted": 0,
+                    "last": None,
+                }
+            item = seen[key]
             if isinstance(rule, dict):
                 item["rule"] = rule
                 item["name"] = rule.get("name") or item["name"]

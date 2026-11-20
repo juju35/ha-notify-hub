@@ -114,7 +114,7 @@ Every notification is filed under a **source**, shown in the journal and on the 
 - without `source`: the automation or script that called `notify_hub.send` is found, then the integration most of its entities belong to (helpers, templates and Home Assistant itself left aside) — a leak automation on ZHA sensors is filed under *Zigbee Home Automation*; an automation that only uses helpers is its own source
 - `source: hue` (a loaded integration), `source: binary_sensor.kitchen_leak` (its integration) or any text (`source: Safety`)
 
-Each source can be customized in the panel's **Sources** tab, or as YAML in **Configure → Sources** (keyed by the integration domain, `automation.<id>` or the slug of the text):
+Each source can be customized in the panel's **Sources** tab — also before its first notification, by picking the integration in the list — or as YAML in **Configure → Sources** (keyed by the integration domain, `automation.<id>` or the slug of the text):
 
 ```yaml
 hue:

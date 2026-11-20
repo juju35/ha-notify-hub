@@ -107,7 +107,17 @@ async def test_rules(hass: HomeAssistant, sent) -> None:
 async def test_sources_listed(hass: HomeAssistant, hass_ws_client, sent) -> None:
     people(hass)
     acme(hass)
-    await setup_hub(hass, **{CONF_SOURCES: {"acme": {"icon": "mdi:lightbulb"}, "unused": {"muted": True}}})
+    hass.config.components.add("zeta")
+    await setup_hub(
+        hass,
+        **{
+            CONF_SOURCES: {
+                "acme": {"icon": "mdi:lightbulb"},
+                "unused": {"muted": True},
+                "zeta": {"people": ["person.anne"]},
+            }
+        },
+    )
     await send(hass, message="a", source="acme")
     await send(hass, message="b", source="acme")
     await send(hass, message="c", source="Safety")
@@ -118,6 +128,9 @@ async def test_sources_listed(hass: HomeAssistant, hass_ws_client, sent) -> None
     assert [s["key"] for s in state["sources"]][:2] == ["acme", "safety"]
     assert listed["acme"]["count"] == 2 and listed["acme"]["rule"] == {"icon": "mdi:lightbulb"}
     assert listed["unused"]["count"] == 0 and listed["unused"]["rule"] == {"muted": True}
+    assert {"domain": "acme", "name": "Acme"} in state["integrations"]
+    assert (listed["zeta"]["name"], listed["zeta"]["domain"]) == ("Zeta", "zeta")  # set before any notification
+    assert not any(i["domain"] in ("sensor", "notify_hub") for i in state["integrations"])
     assert state["sources"] and state["recent"][0]["source_key"] == "safety"
     look = hass.states.get("sensor.notify_hub_critical_to_acknowledge").attributes["sources"]
     assert look["acme"] == {"name": "Acme", "domain": "acme", "icon": "mdi:lightbulb", "color": None}
