@@ -6,7 +6,7 @@ from datetime import timedelta
 from typing import Any
 
 import pytest
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
@@ -27,19 +27,6 @@ from custom_components.notify_hub.hub import in_window, parse_time
 ANNE = "notify.mobile_app_anne_phone"
 BEN = "notify.mobile_app_ben_phone"
 SMS = "notify.sms"
-
-
-@pytest.fixture
-def sent(hass: HomeAssistant) -> list[tuple[str, dict[str, Any]]]:
-    """Every call to the fake notify services, as (service, data)."""
-    calls: list[tuple[str, dict[str, Any]]] = []
-
-    async def record(call: ServiceCall) -> None:
-        calls.append((f"notify.{call.service}", dict(call.data)))
-
-    for name in ("mobile_app_anne_phone", "mobile_app_ben_phone", "sms"):
-        hass.services.async_register("notify", name, record)
-    return calls
 
 
 def people(hass: HomeAssistant, anne: str = "home", ben: str = "not_home") -> None:
@@ -210,3 +197,67 @@ async def test_found_channels(hass: HomeAssistant, sent) -> None:
     entry = await setup_hub(hass, **{CONF_PEOPLE: {}})
     hub = entry.runtime_data
     assert hub.people()[0]["channels"] == [ANNE] and not hub.people()[0]["custom"]
+
+
+async def test_found_channels_after_a_rename(hass: HomeAssistant, sent) -> None:
+    """A phone renamed in Home Assistant keeps its notify service (named after the registered device name)."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    app = MockConfigEntry(domain="mobile_app")
+    app.add_to_hass(hass)
+    registry = dr.async_get(hass)
+    device = registry.async_get_or_create(
+        config_entry_id=app.entry_id, identifiers={("mobile_app", "x")}, name="Anne Phone"
+    )
+    registry.async_update_device(device.id, name_by_user="Kitchen tablet")
+    tracker = er.async_get(hass).async_get_or_create(
+        "device_tracker", "mobile_app", "x", device_id=device.id, config_entry=app
+    )
+    hass.states.async_set("person.anne", "home", {"friendly_name": "Anne", "device_trackers": [tracker.entity_id]})
+    entry = await setup_hub(hass, **{CONF_PEOPLE: {}})
+    assert entry.runtime_data.people()[0]["channels"] == [ANNE]
+
+
+async def test_counts_follow_the_journal(hass: HomeAssistant, sent) -> None:
+    """The counts are cached between changes, and recomputed at each one."""
+    people(hass)
+    entry = await setup_hub(hass)
+    hub = entry.runtime_data
+    assert hub.counts()["sent_today"] == 0
+    await send(hass, message="One", priority="info")
+    assert hub.counts()["sent_today"] == 1
+    counted = hub.counts()
+    counted["sent_today"] = 99  # a copy: the cache is not changed by the caller
+    assert hub.counts()["sent_today"] == 1
+    await send(hass, message="Two", priority="digest")
+    assert hub.counts()["grouped"] == 1
+
+
+async def test_services_need_the_hub(hass: HomeAssistant, sent) -> None:
+    """The actions answer with a clear error while the hub is not loaded."""
+    from homeassistant.exceptions import ServiceValidationError
+
+    people(hass)
+    entry = await setup_hub(hass)
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    with pytest.raises(ServiceValidationError):
+        await send(hass, message="Nobody listens")
+
+
+async def test_digest_kept_when_nobody_is_reachable(hass: HomeAssistant, sent) -> None:
+    """A digest nobody can receive leaves its notifications queued for the next one."""
+    people(hass)
+    entry = await setup_hub(hass, **{CONF_PEOPLE: {"person.anne": ["notify.gone"], "person.ben": ["notify.gone"]}})
+    await send(hass, message="Battery low", priority="digest")
+    response = await hass.services.async_call(DOMAIN, "send_digest", {}, blocking=True, return_response=True)
+    assert response == {"sent": 0}
+    hub = entry.runtime_data
+    assert hub.journal[0]["status"] == "grouped" and hub.counts()["grouped"] == 1
+    # Reachable again: the next digest carries it.
+    hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_PEOPLE: {"person.anne": [ANNE]}})
+    await hass.async_block_till_done()
+    response = await hass.services.async_call(DOMAIN, "send_digest", {}, blocking=True, return_response=True)
+    assert response == {"sent": 1}
+    assert hub.journal[0]["status"] == "delivered" and "Battery low" in to(sent, ANNE)[0]["message"]

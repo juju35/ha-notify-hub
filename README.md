@@ -31,12 +31,12 @@ Home Assistant integration that puts **one hub in front of all your notification
   - `alert`: to the people at home (everyone when nobody is), held during quiet hours
   - `info`: to the people at home, held during quiet hours; with nobody home, kept for the digest — or sent to everyone with the **away mode** on
   - `digest`: always grouped and sent at the digest times
-- **Quiet hours** — alerts and infos notifications are held and delivered when they end
+- **Quiet hours** — alert and info notifications are held and delivered when they end
 - **Duplicates dropped** — the same topic (or the same title and message) within N minutes is sent once
 - **Digests** — one grouped notification at the times you choose (08:00 and 19:00 by default)
 - **Escalation** of critical notifications — not acknowledged after 5 min: sent again to everyone; after 10 more: to an SMS service of your choice
 - **Acknowledge** from the phone notification, the card or the panel: the notification is cleared on every phone
-- **Panel** (administrators) — journal with filters, people and channels, rules, settings and test buttons; a red badge on the sidebar entry while something waits for an acknowledgement
+- **Panel** (administrators) — journal with filters, people and channels, rules, settings and test buttons; a red badge on the sidebar entry while something waits for an acknowledgement; the top bar can be hidden (Settings tab), the tabs staying with the menu and the buttons
 - **Card** — today's figures and the latest notifications, with the Acknowledge button
 - Animated illustrated header (bell ringing when something critical waits), light and dark
 - **Sensors** — sent today, grouped, held, duplicates avoided, to acknowledge
@@ -158,7 +158,7 @@ Every option is in the visual editor.
 3. The people concerned are worked out (those asked, else everyone; for `alert` and `info`, only those at home when someone is).
 4. `digest` always waits for the next digest time, and so does `info` when nobody is home (unless the away mode is on); during the quiet hours, `alert` and `info` are held.
 5. Otherwise it goes to each person's phones. A `critical` notification carries an Acknowledge button and starts the escalation.
-6. Every minute, the hub releases what the quiet hours held, sends the digests that are due, escalates and prunes the journal.
+6. Every 30 seconds, the hub releases what the quiet hours held, sends the digests that are due, escalates and prunes the journal.
 
 ## Development
 
@@ -167,11 +167,12 @@ pip install -r requirements_test.txt && pytest
 npm install --no-save acorn@8.19.0 && node scripts/split-frontend.mjs --check   # the translation split the release makes
 pip install playwright pillow && playwright install chromium
 python scripts/screenshots.py    # renders the stills and the GIF (needs ffmpeg) into screenshots/
+python scripts/layout_check.py   # the card and the panel patch their DOM in place on state updates
 ```
 
 ### Releasing
 
-1. Bump the version in `custom_components/notify_hub/manifest.json`
+1. Bump the version in `custom_components/notify_hub/manifest.json`, `const.py` (`VERSION`) and the version constants of `frontend/notify-hub-panel.js` and `frontend/notify-hub-card.js` (the **Version consistency** check compares them)
 2. Add a `## <version>` section at the top of [CHANGELOG.md](https://github.com/juju35/ha-notify-hub/blob/main/CHANGELOG.md)
 3. Push to `main`: the **Release** workflow creates the tag and the GitHub release with the changelog section as notes
 

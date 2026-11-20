@@ -109,6 +109,10 @@ class NotifyHub:
         self._digest_sent: str | None = None  # "<date> <HH:MM>" of the last digest sent
         self._listeners: list[CALLBACK_TYPE] = []
         self._unsubs: list[Callable[[], None]] = []
+        # counts() is read by the five sensors and the summary at every change: computed once per change (and per
+        # hour, for the "today" and "7 days" windows) instead of parsing the whole journal six times.
+        self._rev = 0
+        self._counts: tuple[tuple[int, str], dict[str, int]] | None = None
 
     # ── Options ─────────────────────────────────────────────────────────────
 
@@ -189,13 +193,19 @@ class NotifyHub:
             device = devices.async_get(entry.device_id)
             if device is None:
                 continue
-            service = f"mobile_app_{slugify(device.name_by_user or device.name or '')}"
-            if self.hass.services.has_service("notify", service) and f"notify.{service}" not in found:
-                found.append(f"notify.{service}")
+            # The Companion app names its notify service after the device name it registered with (the device's
+            # `name`); a name given in Home Assistant (`name_by_user`) does not rename the service, so it is only
+            # tried second (it used to be tried first, and a renamed phone got no notification).
+            for name in (device.name, device.name_by_user):
+                service = f"mobile_app_{slugify(name or '')}"
+                if name and self.hass.services.has_service("notify", service):
+                    if f"notify.{service}" not in found:
+                        found.append(f"notify.{service}")
+                    break
         return found
 
     def notify_services(self) -> list[str]:
-        """Every notify service but the hub's own, for the panel's channel pickers."""
+        """Every notify service, for the panel's channel pickers."""
         return sorted(f"notify.{name}" for name in self.hass.services.async_services().get("notify", {}))
 
     def _targets(self, names: list[str] | None, *, present_only: bool) -> list[dict[str, Any]]:
@@ -231,6 +241,7 @@ class NotifyHub:
         return {"journal": self.journal[:MAX_JOURNAL], "digest_sent": self._digest_sent}
 
     def _changed(self) -> None:
+        self._rev += 1
         self._store.async_delay_save(self._data, SAVE_DELAY)
         for listener in list(self._listeners):
             listener()
@@ -443,7 +454,8 @@ class NotifyHub:
         return f"{local.date().isoformat()} {passed[-1].strftime('%H:%M')}" if passed else None
 
     async def async_send_digest(self) -> int:
-        """Send what waits for the digest as one message (everyone at home, else everyone); the number sent."""
+        """Send what waits for the digest as one message (everyone at home, else everyone); the number sent (0 when
+        nobody could be reached: they wait for the next digest)."""
         waiting = [e for e in reversed(self.journal) if e["status"] == STATUS_GROUPED]
         if not waiting:
             return 0
@@ -461,8 +473,15 @@ class NotifyHub:
         }
         targets = self._targets(None, present_only=True) or self._targets(None, present_only=False)
         await self._deliver(digest, targets)
+        if digest["status"] != STATUS_DELIVERED:
+            # Nobody reachable (no channel, or every channel failed): the notifications stay queued for the next
+            # digest instead of being lost as "nobody".
+            _LOGGER.warning(
+                "Notify Hub: nobody reachable for the digest, %s notifications kept for the next one", len(waiting)
+            )
+            return 0
         for entry in waiting:
-            entry["status"] = STATUS_DELIVERED if digest["status"] == STATUS_DELIVERED else digest["status"]
+            entry["status"] = STATUS_DELIVERED
             entry["people"] = digest["people"]
             entry["digest"] = dt_util.utcnow().isoformat()
         self._changed()
@@ -507,6 +526,14 @@ class NotifyHub:
     # ── Figures (sensors, card, panel) ──────────────────────────────────────
 
     def counts(self) -> dict[str, int]:
+        key = (self._rev, dt_util.now().strftime("%Y-%m-%d %H"))
+        if self._counts is not None and self._counts[0] == key:
+            return dict(self._counts[1])
+        result = self._count()
+        self._counts = (key, result)
+        return dict(result)
+
+    def _count(self) -> dict[str, int]:
         today = dt_util.start_of_local_day()
         week = dt_util.utcnow() - timedelta(days=7)
         sent = grouped = duplicates = pending = held = 0
@@ -526,7 +553,7 @@ class NotifyHub:
         return {"sent_today": sent, "grouped": grouped, "held": held, "duplicates": duplicates, "pending": pending}
 
     def next_digest(self) -> str | None:
-        """Local time (HH:MM) of the next digest, when something waits for it."""
+        """Local time (HH:MM) of the next digest time (None without any digest time)."""
         times = self.digest_times
         if not times:
             return None

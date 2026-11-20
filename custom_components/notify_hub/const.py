@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "notify_hub"
 TITLE: Final = "Notify Hub"
-VERSION: Final = "0.1.1"
+VERSION: Final = "0.2.0"
 
 # Priorities, from the most to the least urgent.
 PRIORITY_CRITICAL: Final = "critical"
@@ -37,6 +37,9 @@ CONF_SMS_SERVICE: Final = "sms_service"
 CONF_AWAY_MODE: Final = "away_mode"
 CONF_PEOPLE: Final = "people"  # {person entity: [notify services]}: overrides the channels found
 CONF_RETENTION_DAYS: Final = "retention_days"
+# The panel's top bar: "off" (shown) or "all" (hidden, the tabs stay with the menu and the buttons).
+CONF_HIDE_HEADER: Final = "hide_header"
+HIDE_HEADER_MODES: Final = ("off", "all")
 
 DEFAULT_QUIET_START: Final = "22:00"
 DEFAULT_QUIET_END: Final = "07:00"

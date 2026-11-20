@@ -35,6 +35,13 @@ jobs:
         run: |
           VERSION="$(jq -r .version custom_components/notify_hub/manifest.json)"
           grep -q "^## $VERSION " CHANGELOG.md || { echo "::error file=CHANGELOG.md::no '## $VERSION' entry in CHANGELOG.md"; exit 1; }
+          # const.py (the panel's "version" field) and the version constants of the panel and the card.
+          check() {
+            grep -q "$2" "$1" || { echo "::error file=$1::version not $VERSION here (expected: $2)"; exit 1; }
+          }
+          check custom_components/notify_hub/const.py "^VERSION: Final = \"$VERSION\"$"
+          check custom_components/notify_hub/frontend/notify-hub-panel.js "^var NOTIFY_HUB_PANEL_VERSION = '$VERSION';$"
+          check custom_components/notify_hub/frontend/notify-hub-card.js "^var NOTIFY_HUB_CARD_VERSION = '$VERSION';$"
           echo "Version $VERSION everywhere"
 
   hassfest:

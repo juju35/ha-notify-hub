@@ -14,6 +14,7 @@ from .const import (
     CONF_DEDUP_MINUTES,
     CONF_DIGEST_TIMES,
     CONF_ESCALATION_MINUTES,
+    CONF_HIDE_HEADER,
     CONF_PEOPLE,
     CONF_QUIET_ENABLED,
     CONF_QUIET_END,
@@ -21,6 +22,8 @@ from .const import (
     CONF_RETENTION_DAYS,
     CONF_SMS_SERVICE,
     DOMAIN,
+    HIDE_HEADER_MODES,
+    MAX_JOURNAL,
     PRIORITIES,
     PRIORITY_INFO,
     VERSION,
@@ -42,6 +45,7 @@ OPTION_SCHEMA = vol.Schema(
         vol.Optional(CONF_AWAY_MODE): bool,
         vol.Optional(CONF_RETENTION_DAYS): vol.All(vol.Coerce(int), vol.Range(min=1, max=90)),
         vol.Optional(CONF_PEOPLE): {str: [str]},
+        vol.Optional(CONF_HIDE_HEADER): vol.In(HIDE_HEADER_MODES),
     }
 )
 
@@ -64,7 +68,12 @@ def _not_loaded(connection: websocket_api.ActiveConnection, msg: dict[str, Any])
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/state", vol.Optional("limit", default=200): int})
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/state",
+        vol.Optional("limit", default=200): vol.All(int, vol.Range(min=1, max=MAX_JOURNAL)),
+    }
+)
 @callback
 def ws_state(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     """Everything the panel shows: journal, counts, people and their channels, options, notify services."""

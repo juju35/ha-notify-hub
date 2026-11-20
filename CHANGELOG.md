@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.2.0 - 2026-11-20
+
+### Features
+
+- Panel: the top bar can be hidden (Settings tab, `hide_header`), the tabs staying with the menu and the buttons, like the other ha-* panels
+- Card: the header illustration (`illustration_theme`) is in the visual editor
+- Card: the header scene sits in the bottom-right corner, under the status pill (70 px high), so the title and subtitle stay clear at every width
+- Card and panel: every count tile carries its state badge (grey at zero)
+
+### Fixes
+
+- Card and panel no longer change height or make the dashboard scroll by themselves on state updates: the card patches its DOM in place (it was rebuilt, collapsing for a moment, at every change of the hub's sensor), and neither reacts to entities it does not use
+- Panel: a field being edited in Rules or Settings keeps its focus and its value when the data refreshes (every 30 s or at each notification)
+- Card: the counts switch to two columns on narrow cards (the container query never applied; "To acknowledge" overflowed at 300 px)
+- Card and panel: the status pill sits on the title's line; on a narrow panel it shows the count alone instead of hiding the title
+- Card: the notification ages ("3 min") move on by themselves
+- Panel: "nobody" and "failed" statuses translated; tabs reachable with the arrow keys; the toast is announced to screen readers
+- A phone renamed in Home Assistant still gets its notifications (the Companion app service is named after the registered device name)
+- A digest nobody can receive (no channel, or every channel failing) keeps its notifications queued for the next digest instead of dropping them as "nobody"
+- The actions work on Home Assistant 2024.12 (the documented minimum): `async_loaded_entries` only came later
+
+### Performance
+
+- Card and panel: the hub's sensor is looked up once instead of scanning every state at each update
+- The counts are computed once per change of the journal instead of once per sensor
+
+### Maintenance
+
+- Version consistency also checks `const.py` and the panel and card version constants
+- Layout regression check (`scripts/layout_check.py`) run by the Screenshots workflow
+- Tests for the WebSocket commands, the options flow, the diagnostics and the dashboard resources (coverage 76 % → 90 %)
+
 ## 0.1.1 - 2026-11-20
 
 ### Fixes

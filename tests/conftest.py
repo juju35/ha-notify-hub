@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
 import pytest
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import frame
 
 from custom_components.notify_hub.const import DOMAIN
@@ -62,3 +64,16 @@ def no_deprecated_calls():
         with open(path, "a", encoding="utf-8") as log:
             log.writelines(f"{m}\n" for m in recorder.messages)
     assert not recorder.messages, "\n".join(recorder.messages)
+
+
+@pytest.fixture
+def sent(hass: HomeAssistant) -> list[tuple[str, dict[str, Any]]]:
+    """Every call to the fake notify services, as (service, data)."""
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    async def record(call: ServiceCall) -> None:
+        calls.append((f"notify.{call.service}", dict(call.data)))
+
+    for name in ("mobile_app_anne_phone", "mobile_app_ben_phone", "sms"):
+        hass.services.async_register("notify", name, record)
+    return calls

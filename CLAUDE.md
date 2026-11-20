@@ -23,6 +23,7 @@ pre-commit run -a
 vulture custom_components .vulture_whitelist.py --min-confidence 60
 npx --yes jscpd@5.4.2 .
 pytest
+python scripts/layout_check.py   # the card and panel patch their DOM in place (needs playwright + chromium)
 ```
 
 ## Releasing — how it works here
@@ -37,6 +38,9 @@ This is an **INTEGRATION** repo. A bump is complete only when **every** file bel
 carries the new version, updated together in one commit:
 1. `CHANGELOG.md` → add a "## X.Y.Z - YYYY-MM-DD" section at the top (`### Features` | `Fixes` | `Performance` | `Maintenance`).
 2. `custom_components/notify_hub/manifest.json` → `"version": "X.Y.Z"`.
+3. `custom_components/notify_hub/const.py` → `VERSION: Final = "X.Y.Z"`.
+4. `custom_components/notify_hub/frontend/notify-hub-panel.js` → `NOTIFY_HUB_PANEL_VERSION` and
+   `frontend/notify-hub-card.js` → `NOTIFY_HUB_CARD_VERSION`.
 - Bump rule: `fix` → patch, `feat` → minor, breaking change → major.
 - The PR/commit title carries the version in parentheses, e.g. `feat: new option (X.Y.Z)`.
 

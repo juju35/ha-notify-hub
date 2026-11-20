@@ -91,6 +91,9 @@ jobs:
             echo "::error::screenshots failed: $(tail -c 1200 /tmp/screenshots.log | tr -d '\r' | tr '\n' ' ')"
             exit 1
           }
+      # The card and the panel must patch their DOM in place on state updates (no rebuild, no height change).
+      - name: Layout regression check
+        run: python scripts/layout_check.py
       - name: Commit refreshed screenshots
         if: steps.app-token.outputs.token != ''
         env:
