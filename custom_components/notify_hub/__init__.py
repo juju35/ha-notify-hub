@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
@@ -53,8 +53,11 @@ ACK_SCHEMA = vol.Schema({vol.Optional(ATTR_ID): cv.string})
 
 def hub_of(hass: HomeAssistant) -> NotifyHub:
     """The loaded hub (single config entry)."""
-    for entry in hass.config_entries.async_loaded_entries(DOMAIN):
-        return entry.runtime_data
+    # async_entries + state, not async_loaded_entries: that one only exists since Home Assistant 2025.x, and the
+    # minimum supported here is 2024.12.
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.state is ConfigEntryState.LOADED:
+            return entry.runtime_data
     raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_loaded")
 
 
