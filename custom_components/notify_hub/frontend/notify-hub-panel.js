@@ -715,6 +715,8 @@ class NotifyHubPanel extends HTMLElement {
       .srcbtn span:last-child { overflow: hidden; text-overflow: ellipsis; } .srcbtn:hover span:last-child { text-decoration: underline; }
       .chip.src .ic { width: 14px; height: 14px; }
       .tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; } .ic.xs { width: 12px; height: 12px; vertical-align: -2px; }
+      .tags .tag { white-space: nowrap; }
+      @media (max-width: 600px) { .src-card .phead { flex-wrap: wrap; } .src-card .phead .txt { flex: 1 1 0; min-width: 0; } .src-card .phead .tags { order: 3; flex-basis: 100%; justify-content: flex-start; padding-left: 44px; } .src-card .phead .tags:empty { display: none; } }
       .src-card.muted-src .phead > .av, .src-card.muted-src .phead .txt { opacity: .55; }
       .srcform { display: flex; flex-direction: column; padding-top: 12px; border-top: 1px solid var(--divider-color, rgba(127,127,127,.15)); }
       .colorrow { display: flex; gap: 8px; } .colorrow input[type=color] { flex: none; width: 44px; padding: 2px; height: auto; } .colorrow input[type=text] { flex: 1; min-width: 0; }
