@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import persistent_notification
@@ -28,6 +29,10 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 REPAIRS_URL = "/config/repairs"
+
+# True while the hub sends through a channel: a persistent notification raised then is the hub's own (a channel such as
+# notify.persistent_notification), not one to capture, or it would be sent again, and again.
+SENDING: ContextVar[bool] = ContextVar("notify_hub_sending", default=False)
 
 
 def _found(hass: HomeAssistant, domain: str, origin: str) -> dict[str, Any]:
@@ -71,7 +76,7 @@ class Capture:
     def _on_persistent(
         self, update: persistent_notification.UpdateType, notifications: dict[str, persistent_notification.Notification]
     ) -> None:
-        if update != persistent_notification.UpdateType.ADDED:
+        if update != persistent_notification.UpdateType.ADDED or SENDING.get():
             return
         for nid, notification in notifications.items():
             self.hass.async_create_task(self._send_persistent(nid, dict(notification)), eager_start=False)

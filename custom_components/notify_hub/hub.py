@@ -34,7 +34,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
-from .capture import Capture
+from .capture import SENDING, Capture
 from .const import (
     ACK_ACTION,
     CONF_AWAY_MODE,
@@ -389,11 +389,14 @@ class NotifyHub:
         if entry["title"]:
             payload["title"] = entry["title"]
         payload["data"] = self._mobile_data(entry, critical=critical, mobile=service.startswith("mobile_app_"))
+        token = SENDING.set(True)
         try:
             await self.hass.services.async_call(domain, service, payload, blocking=True)
         except Exception:  # noqa: BLE001 — one channel failing must not stop the others
             _LOGGER.exception("Notify Hub could not send through %s", channel)
             return False
+        finally:
+            SENDING.reset(token)
         return True
 
     def _mobile_data(self, entry: dict[str, Any], *, critical: bool, mobile: bool) -> dict[str, Any]:

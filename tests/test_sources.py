@@ -167,6 +167,31 @@ async def test_capture_persistent(hass: HomeAssistant, sent) -> None:
     assert len(hub_of(hass).journal) == 2
 
 
+async def test_capture_skips_the_hubs_own_persistent_notifications(hass: HomeAssistant, sent) -> None:
+    """A channel that raises a persistent notification (notify.persistent_notification) does not loop back."""
+    people(hass, ben="home")
+    raised: list[str] = []
+
+    async def bell(call) -> None:
+        raised.append(call.data["message"])
+        if len(raised) < 5:  # a loop would go on for ever: stop it here
+            persistent_notification.async_create(hass, call.data["message"], call.data.get("title"))
+
+    hass.services.async_register("notify", "bell", bell)
+    await setup_hub(
+        hass,
+        **{CONF_CAPTURE_PERSISTENT: True, "people": {"person.anne": ["notify.bell"], "person.ben": [BEN]}},
+    )
+    await send(hass, message="Washing machine done", source="acme")
+    await hass.async_block_till_done()
+    assert raised == ["Washing machine done"]
+    assert len(hub_of(hass).journal) == 1
+    # A persistent notification raised by something else is still captured.
+    persistent_notification.async_create(hass, "Bridge found", None, "zeroconf_discovery")
+    await hass.async_block_till_done()
+    assert len(hub_of(hass).journal) == 2
+
+
 async def test_capture_repairs(hass: HomeAssistant, sent) -> None:
     people(hass)
     acme(hass)

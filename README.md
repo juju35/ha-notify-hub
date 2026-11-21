@@ -153,7 +153,7 @@ garden:
   muted: true              # kept in the journal, sent to nobody
 ```
 
-The same tab (or step) turns on the **captured notifications**: persistent notifications (the sidebar bell, as infos, filed under the integration their id starts with) and new repairs (an alert for an error, an info for a warning, opening Settings → Repairs). Both are off by default.
+The same tab (or step) turns on the **captured notifications**: persistent notifications (the sidebar bell, as infos, filed under the integration their id starts with) and new repairs (an alert for an error, an info for a warning, opening Settings → Repairs). Both are off by default. A persistent notification raised by one of the hub's own channels (`notify.persistent_notification` set as a person's channel, say) is not captured again, so it cannot loop.
 
 ### Entities
 
