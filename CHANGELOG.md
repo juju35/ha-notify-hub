@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0 - 2026-11-21
+
+### Features
+
+- A muted source still lets its critical notifications through (a leak, smoke…): they are sent and wait for their acknowledgement as usual; the rest stays muted
+- Panel, Sources tab: the priorities (tags and the priority list of a source) are shown in the panel's language
+
+### Fixes
+
+- Captured persistent notifications: one raised by a channel of the hub itself (`notify.persistent_notification` set as a person's channel) was captured and sent again, for ever; the hub's own sends are no longer captured
+- Panel, Sources tab on a phone: a source's tags go on their own line under its name instead of squeezing it (« Quiet hours ignored » was wrapped on three lines)
+
 ## 0.5.0 - 2026-11-21
 
 ### Features

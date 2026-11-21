@@ -11,8 +11,8 @@ found by themselves, or the ones set in the options (`people`). By priority:
 - digest: kept for the next digest, sent at the digest times as one message.
 A notification whose topic (else title and message) was handled less than `dedup_minutes` ago is not sent again.
 Each notification is filed under its source (an integration, found by itself, see sources.py), whose rules — forced
-priority, people, duplicate delay, quiet hours ignored, muted — apply before the above; its icon and color go to the
-phones (Android) and to the panel and the card.
+priority, people, duplicate delay, quiet hours ignored, muted (its critical ones still sent) — apply before the above;
+its icon and color go to the phones (Android) and to the panel and the card.
 Everything is kept in a journal (.storage), newest first, for the panel, the card and the sensors.
 """
 
@@ -34,7 +34,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
-from .capture import Capture
+from .capture import SENDING, Capture
 from .const import (
     ACK_ACTION,
     CONF_AWAY_MODE,
@@ -323,7 +323,8 @@ class NotifyHub:
         dedup = self.dedup
         if isinstance(rule.get("dedup_minutes"), int | float):
             dedup = timedelta(minutes=float(rule["dedup_minutes"]))
-        if rule.get("muted"):
+        # A muted source is kept quiet, but never its critical notifications (a leak, smoke…).
+        if rule.get("muted") and priority != PRIORITY_CRITICAL:
             entry["status"] = STATUS_MUTED
         elif self._duplicate(entry, now, dedup):
             entry["status"] = STATUS_DUPLICATE
@@ -389,11 +390,14 @@ class NotifyHub:
         if entry["title"]:
             payload["title"] = entry["title"]
         payload["data"] = self._mobile_data(entry, critical=critical, mobile=service.startswith("mobile_app_"))
+        token = SENDING.set(True)
         try:
             await self.hass.services.async_call(domain, service, payload, blocking=True)
         except Exception:  # noqa: BLE001 — one channel failing must not stop the others
             _LOGGER.exception("Notify Hub could not send through %s", channel)
             return False
+        finally:
+            SENDING.reset(token)
         return True
 
     def _mobile_data(self, entry: dict[str, Any], *, critical: bool, mobile: bool) -> dict[str, Any]:
