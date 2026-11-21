@@ -25,6 +25,7 @@ Home Assistant integration that puts **one hub in front of all your notification
 ## Features
 
 - **One action for every automation** — `notify_hub.send` with a message, a priority and optionally a topic, a source and the people concerned; no more list of `notify.mobile_app_*` to keep up to date
+- **A notify target for every integration** — `notify.notify_hub` (action and entity) can be picked wherever an integration asks for a notify service
 - **People, not phones** — each person's phones are found from their `person` entity (Companion app device trackers); override them per person in the panel
 - **Four priorities**
   - `critical`: sent at once to everyone concerned, through quiet hours, with the critical sound (iOS) and an **Acknowledge** button
@@ -99,6 +100,27 @@ data:
 
 The action returns the journal entry (`id`, `status`, `people`, `source`), so a script can wait for the acknowledgement.
 
+### From other integrations: `notify.notify_hub`
+
+Many integrations only ask for a **notify service** to send their alerts to. Pick **`notify.notify_hub`** there: their notifications then go through the hub's rules like any other, filed under the integration that sent them.
+
+```yaml
+action: notify.notify_hub
+data:
+  title: "Low battery"
+  message: "Kitchen sensor at 5 %"
+  target:               # optional: the people (everyone, by priority and presence, when left out)
+    - person.alex
+  data:                 # optional: the hub's keys, the rest goes to the phones as is
+    priority: alert     # info when left out
+    topic: battery_kitchen
+    url: /lovelace/home
+```
+
+There is also a `notify.notify_hub` **entity**, for the integrations and automations that use `notify.send_message` (message and title only, sent as an info). A source's rules (forced priority, people, muted…) are the simplest way to tune an integration that cannot pass a priority.
+
+> An integration that both posts a persistent notification and calls a notify service would reach the hub twice with the captured notifications on: give it `notify.notify_hub` or rely on the capture, not both.
+
 | Action | What it does |
 |---|---|
 | `notify_hub.send` | Sends a notification through the hub's rules |
@@ -135,7 +157,7 @@ The same tab (or step) turns on the **captured notifications**: persistent notif
 
 ### Entities
 
-One device, **Notify Hub**, with five sensors (named in Home Assistant's language):
+One device, **Notify Hub**, with the `notify.notify_hub` entity and five sensors (named in Home Assistant's language):
 
 | Sensor | What it counts |
 |---|---|

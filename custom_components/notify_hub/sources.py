@@ -11,7 +11,9 @@ Resolution, `source` given to `notify_hub.send`:
 - anything else: free text, kept as it was written.
 Without `source`, from the call's context: the automation or script that made the call (the one whose last run
 carries that context), then the integration most of its entities belong to (helpers, templates and Home Assistant
-itself left aside); the automation itself when it only uses those.
+itself left aside); the automation itself when it only uses those. Called by an integration rather than an
+automation (another integration's notify service set to `notify.notify_hub`, or its own call to `notify_hub.send`): that
+integration, read from the call stack.
 
 Each source may have, in the options (`sources`): a name, an icon (mdi:), a color, a forced priority, its own
 people, its own duplicate delay, quiet hours ignored, or be muted (kept in the journal, sent to nobody).
@@ -20,6 +22,8 @@ people, its own duplicate delay, quiet hours ignored, or be muted (kept in the j
 from __future__ import annotations
 
 import logging
+import re
+import sys
 from collections import Counter
 from typing import Any
 
@@ -120,6 +124,29 @@ def integration_of(hass: HomeAssistant, entities: list[str]) -> str | None:
     return platforms.most_common(1)[0][0] if platforms else None
 
 
+# An integration's code, in the call stack: its domain.
+_CODE_PATH = re.compile(r"/(?:custom_components|homeassistant/components)/([a-z0-9_]+)/")
+# Integrations the call only goes through (the hub itself, the notify actions, the core's services).
+_PASS_THROUGH = frozenset({"notify_hub", "notify", "homeassistant"})
+# Integrations that run what a person wrote or clicked: the context tells the source (or nothing does), not the stack.
+_ON_BEHALF = frozenset({"automation", "script", "websocket_api", "api", "http", "frontend", "conversation", "intent"})
+
+
+def caller_integration(hass: HomeAssistant) -> str | None:
+    """The integration whose code made the call, read from the call stack (a call awaited by its caller, as
+    `blocking=True` service calls are); None when an automation, a script or a person made it, or nothing tells."""
+    frame = sys._getframe(1)
+    while frame is not None:
+        if match := _CODE_PATH.search(frame.f_code.co_filename.replace("\\", "/")):
+            domain = match.group(1)
+            if domain in _ON_BEHALF:
+                return None
+            if domain not in _PASS_THROUGH and is_integration(hass, domain):
+                return domain
+        frame = frame.f_back
+    return None
+
+
 def resolve(hass: HomeAssistant, source: str | None, context: Context | None = None) -> dict[str, Any]:
     """The source of a notification: {key, name, domain, origin}; key "" when nothing tells it."""
     text = str(source or "").strip()
@@ -131,6 +158,8 @@ def resolve(hass: HomeAssistant, source: str | None, context: Context | None = N
         return {"key": slugify(text) or text, "name": text, "domain": None, "origin": None}
     caller = _caller(hass, context)
     if caller is None:
+        if domain := caller_integration(hass):
+            return _source(hass, domain)
         return {"key": "", "name": "", "domain": None, "origin": None}
     name = _entity_name(caller, caller.entity_id)
     if domain := integration_of(hass, _entities_of(hass, caller)):
