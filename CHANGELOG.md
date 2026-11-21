@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.5.1 - 2026-11-21
+## 0.6.0 - 2026-11-21
+
+### Features
+
+- A muted source still lets its critical notifications through (a leak, smoke…): they are sent and wait for their acknowledgement as usual; the rest stays muted
+- Panel, Sources tab: the priorities (tags and the priority list of a source) are shown in the panel's language
 
 ### Fixes
 
