@@ -11,8 +11,8 @@ found by themselves, or the ones set in the options (`people`). By priority:
 - digest: kept for the next digest, sent at the digest times as one message.
 A notification whose topic (else title and message) was handled less than `dedup_minutes` ago is not sent again.
 Each notification is filed under its source (an integration, found by itself, see sources.py), whose rules — forced
-priority, people, duplicate delay, quiet hours ignored, muted — apply before the above; its icon and color go to the
-phones (Android) and to the panel and the card.
+priority, people, duplicate delay, quiet hours ignored, muted (its critical ones still sent) — apply before the above;
+its icon and color go to the phones (Android) and to the panel and the card.
 Everything is kept in a journal (.storage), newest first, for the panel, the card and the sensors.
 """
 
@@ -323,7 +323,8 @@ class NotifyHub:
         dedup = self.dedup
         if isinstance(rule.get("dedup_minutes"), int | float):
             dedup = timedelta(minutes=float(rule["dedup_minutes"]))
-        if rule.get("muted"):
+        # A muted source is kept quiet, but never its critical notifications (a leak, smoke…).
+        if rule.get("muted") and priority != PRIORITY_CRITICAL:
             entry["status"] = STATUS_MUTED
         elif self._duplicate(entry, now, dedup):
             entry["status"] = STATUS_DUPLICATE

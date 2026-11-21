@@ -16,7 +16,8 @@ automation (another integration's notify service set to `notify.notify_hub`, or 
 integration, read from the call stack.
 
 Each source may have, in the options (`sources`): a name, an icon (mdi:), a color, a forced priority, its own
-people, its own duplicate delay, quiet hours ignored, or be muted (kept in the journal, sent to nobody).
+people, its own duplicate delay, quiet hours ignored, or be muted (kept in the journal, sent to nobody; its
+critical ones still sent).
 """
 
 from __future__ import annotations

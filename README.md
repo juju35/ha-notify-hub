@@ -36,7 +36,7 @@ Home Assistant integration that puts **one hub in front of all your notification
 - **Duplicates dropped** — the same topic (or the same title and message) within N minutes is sent once
 - **Digests** — one grouped notification at the times you choose (08:00 and 19:00 by default)
 - **Escalation** of critical notifications — not acknowledged after 5 min: sent again to everyone; after 10 more: to an SMS service of your choice
-- **Sources** — each notification is filed under its integration, found by itself from the automation that sends it (or given as an integration, an entity or a text); per source: name, icon, color, forced priority, people, duplicate delay, quiet hours ignored, or muted
+- **Sources** — each notification is filed under its integration, found by itself from the automation that sends it (or given as an integration, an entity or a text); per source: name, icon, color, forced priority, people, duplicate delay, quiet hours ignored, or muted (its critical notifications still go through)
 - **Captured notifications** (optional) — Home Assistant's persistent notifications and new repairs go through the hub too, filed under their integration
 - **Acknowledge** from the phone notification, the card or the panel: the notification is cleared on every phone
 - **Panel** (administrators) — journal with filters (by status or source), people and channels, rules, sources, settings and test buttons; a red badge on the sidebar entry while something waits for an acknowledgement; the top bar can be hidden (Settings tab), the tabs staying with the menu and the buttons
@@ -150,7 +150,7 @@ safety:
   ignore_quiet: true       # alerts and infos go through the quiet hours
   dedup_minutes: 0         # its own duplicate delay
 garden:
-  muted: true              # kept in the journal, sent to nobody
+  muted: true              # kept in the journal, sent to nobody (critical ones still sent)
 ```
 
 The same tab (or step) turns on the **captured notifications**: persistent notifications (the sidebar bell, as infos, filed under the integration their id starts with) and new repairs (an alert for an error, an info for a warning, opening Settings → Repairs). Both are off by default. A persistent notification raised by one of the hub's own channels (`notify.persistent_notification` set as a person's channel, say) is not captured again, so it cannot loop.

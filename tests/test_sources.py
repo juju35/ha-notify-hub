@@ -98,6 +98,9 @@ async def test_rules(hass: HomeAssistant, sent) -> None:
     assert data["notification_icon"] == "mdi:fire" and data["color"] == "#ff0000"
     assert not to(sent, ANNE)
     assert (await send(hass, message="rain", source="garden", priority="alert"))["status"] == "muted"
+    # Muted, but a critical one still goes through (a leak, smoke…), as a critical.
+    flood = await send(hass, message="flood", source="garden", priority="critical")
+    assert flood["status"] == "pending" and flood["people"]
     assert (await send(hass, message="other", source="else"))["status"] == "held"  # quiet hours
     assert (await send(hass, message="owl", source="night"))["status"] == "delivered"
     for _ in range(2):
