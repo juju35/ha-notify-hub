@@ -419,5 +419,5 @@ if (!customElements.get('notify-hub-card-editor')) customElements.define('notify
 window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === 'notify-hub-card')) {
   var nhT = Object.assign({}, NH_CARD_I18N.en, NH_CARD_I18N[nhLang(document.querySelector('home-assistant')?.hass, {})]);
-  window.customCards.push({ type: 'notify-hub-card', name: nhT.card_name, description: nhT.card_desc, preview: true });
+  window.customCards.push({ type: 'notify-hub-card', name: nhT.card_name, description: nhT.card_desc, preview: false });
 }
