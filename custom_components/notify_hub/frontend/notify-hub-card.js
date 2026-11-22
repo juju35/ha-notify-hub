@@ -7,7 +7,7 @@
  * Served and added to the dashboard resources by the integration.
  * https://github.com/juju35/ha-notify-hub
  */
-var NOTIFY_HUB_CARD_VERSION = '0.7.0';
+var NOTIFY_HUB_CARD_VERSION = '0.7.1';
 
 var NH_CARD_I18N = {
   en: { title: "Notify Hub", sent: "Sent", grouped: "Grouped", held: "Held", pending: "To acknowledge", quiet_until: "Quiet hours until {t}", next_digest: "Next digest at {t}", all_quiet: "All quiet", nothing: "No notification yet", ack: "Acknowledge", st_delivered: "Delivered", st_held: "Held · quiet hours", st_grouped: "In the next digest", st_duplicate: "Duplicate ignored", st_pending: "Critical · waiting", st_acknowledged: "Acknowledged", st_nobody: "Nobody to notify", st_failed: "Failed", critical_n: "{n} critical", not_found: "Notify Hub is not set up", card_name: "Notify Hub Card", card_desc: "The notifications of the house: counts, the critical ones to acknowledge, the latest ones", ed_entity: "Sensor", ed_title: "Title", ed_rows: "Rows", ed_language: "Language", ago_now: "now", ago_min: "{n} min", ago_h: "{n} h", ed_illustration_theme: "Header illustration", it_auto: "Automatic (theme)", it_day: "Day", it_night: "Night", st_muted: "Muted" },
@@ -419,5 +419,5 @@ if (!customElements.get('notify-hub-card-editor')) customElements.define('notify
 window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === 'notify-hub-card')) {
   var nhT = Object.assign({}, NH_CARD_I18N.en, NH_CARD_I18N[nhLang(document.querySelector('home-assistant')?.hass, {})]);
-  window.customCards.push({ type: 'notify-hub-card', name: nhT.card_name, description: nhT.card_desc, preview: true });
+  window.customCards.push({ type: 'notify-hub-card', name: nhT.card_name, description: nhT.card_desc, preview: false });
 }
