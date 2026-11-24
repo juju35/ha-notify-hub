@@ -1,7 +1,9 @@
 """The hub: every notification goes through `NotifyHub.async_send`, which routes, holds, groups or escalates it.
 
 Routing: each person (`person.*`) has channels — the notify services of the mobile apps of their device trackers,
-found by themselves, or the ones set in the options (`people`). By priority:
+found by themselves, or the ones set in the options (`people`). A person in `excluded_people` is never notified;
+whether a person is at home is read from their `presence` entity when one is set (on/home), else from the person.
+By priority:
 - critical: everyone at once, through the quiet hours, with the critical sound and an "Acknowledge" button; while
   nobody acknowledges, sent again to everyone after the first escalation delay, then to the SMS service after the
   second;
@@ -25,7 +27,7 @@ from datetime import datetime, time, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_HOME
+from homeassistant.const import STATE_HOME, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, Context, Event, HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -41,7 +43,9 @@ from .const import (
     CONF_DEDUP_MINUTES,
     CONF_DIGEST_TIMES,
     CONF_ESCALATION_MINUTES,
+    CONF_EXCLUDED_PEOPLE,
     CONF_PEOPLE,
+    CONF_PRESENCE,
     CONF_QUIET_ENABLED,
     CONF_QUIET_END,
     CONF_QUIET_START,
@@ -180,23 +184,36 @@ class NotifyHub:
     # ── People and channels ─────────────────────────────────────────────────
 
     def people(self) -> list[dict[str, Any]]:
-        """Every person: entity, name, at home, channels (the options' ones, else those found) and whether set."""
+        """Every person: entity, name, at home, channels (the options' ones, else those found), whether set, whether
+        excluded and the presence entity set for them."""
         overrides: dict[str, list[str]] = self.options.get(CONF_PEOPLE) or {}
+        excluded = set(self.options.get(CONF_EXCLUDED_PEOPLE) or [])
+        presence: dict[str, str] = self.options.get(CONF_PRESENCE) or {}
         out = []
         for state in sorted(self.hass.states.async_all("person"), key=lambda s: s.name.lower()):
             set_by_hand = state.entity_id in overrides
             channels = list(overrides[state.entity_id]) if set_by_hand else self._found_channels(state.entity_id)
+            sensor = presence.get(state.entity_id)
             out.append(
                 {
                     "entity_id": state.entity_id,
                     "name": state.name,
-                    "home": state.state == STATE_HOME,
+                    "home": self._at_home(state.state, sensor),
                     "channels": channels,
                     "custom": set_by_hand,
+                    "excluded": state.entity_id in excluded,
+                    "presence": sensor,
                     "picture": state.attributes.get("entity_picture"),
                 }
             )
         return out
+
+    def _at_home(self, person_state: str, sensor: str | None) -> bool:
+        """At home: the presence entity's state when set and known (on, home), else the person's state."""
+        other = self.hass.states.get(sensor) if sensor else None
+        if other is not None and other.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return other.state in (STATE_ON, STATE_HOME)
+        return person_state == STATE_HOME
 
     def _found_channels(self, person: str) -> list[str]:
         """The notify services of the mobile apps whose device tracker belongs to the person."""
@@ -242,7 +259,7 @@ class NotifyHub:
 
     def _targets(self, names: list[str] | None, *, present_only: bool) -> list[dict[str, Any]]:
         """The people to notify: those named (entity or name), else those at home (`present_only`), else everyone."""
-        people = [p for p in self.people() if p["channels"]]
+        people = [p for p in self.people() if p["channels"] and not p["excluded"]]
         if names:
             wanted = {n.lower() for n in names}
             return [p for p in people if p["entity_id"].lower() in wanted or p["name"].lower() in wanted]

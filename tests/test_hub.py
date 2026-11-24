@@ -14,7 +14,9 @@ from custom_components.notify_hub.config_flow import default_options
 from custom_components.notify_hub.const import (
     ACK_ACTION,
     CONF_AWAY_MODE,
+    CONF_EXCLUDED_PEOPLE,
     CONF_PEOPLE,
+    CONF_PRESENCE,
     CONF_QUIET_ENABLED,
     CONF_QUIET_END,
     CONF_QUIET_START,
@@ -261,3 +263,44 @@ async def test_digest_kept_when_nobody_is_reachable(hass: HomeAssistant, sent) -
     response = await hass.services.async_call(DOMAIN, "send_digest", {}, blocking=True, return_response=True)
     assert response == {"sent": 1}
     assert hub.journal[0]["status"] == "delivered" and "Battery low" in to(sent, ANNE)[0]["message"]
+
+
+async def test_excluded_people_are_never_notified(hass: HomeAssistant, sent) -> None:
+    people(hass, anne="home", ben="home")
+    hass.states.async_set("person.tablet", "home", {"friendly_name": "Wall tablet"})
+    await setup_hub(
+        hass,
+        **{
+            CONF_PEOPLE: {"person.anne": [ANNE], "person.ben": [BEN], "person.tablet": ["notify.tablet"]},
+            CONF_EXCLUDED_PEOPLE: ["person.ben", "person.tablet"],
+        },
+    )
+    assert (await send(hass, message="Dishwasher done"))["people"] == ["Anne"]
+    assert (await send(hass, message="Smoke", priority="critical"))["people"] == ["Anne"]
+    assert not to(sent, BEN) and not to(sent, "notify.tablet")
+    hub = hass.config_entries.async_entries(DOMAIN)[0].runtime_data
+    assert {p["entity_id"]: p["excluded"] for p in hub.people()} == {
+        "person.anne": False,
+        "person.ben": True,
+        "person.tablet": True,
+    }
+
+
+async def test_presence_read_from_a_sensor(hass: HomeAssistant, sent) -> None:
+    # Anne's phone says away, her Bluetooth presence sensor says home; Ben's sensor is unavailable: his person counts.
+    people(hass, anne="not_home", ben="not_home")
+    hass.states.async_set("binary_sensor.anne_espresence", "on")
+    hass.states.async_set("binary_sensor.ben_espresence", "unavailable")
+    await setup_hub(
+        hass,
+        **{
+            CONF_PRESENCE: {
+                "person.anne": "binary_sensor.anne_espresence",
+                "person.ben": "binary_sensor.ben_espresence",
+            }
+        },
+    )
+    assert (await send(hass, message="Dishwasher done", topic="a"))["people"] == ["Anne"]
+    hass.states.async_set("binary_sensor.anne_espresence", "off")
+    hass.states.async_set("binary_sensor.ben_espresence", "on")
+    assert (await send(hass, message="Washer done", topic="b"))["people"] == ["Ben"]

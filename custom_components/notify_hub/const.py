@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "notify_hub"
 TITLE: Final = "Notify Hub"
-VERSION: Final = "0.8.0"
+VERSION: Final = "0.9.0"
 
 # Priorities, from the most to the least urgent.
 PRIORITY_CRITICAL: Final = "critical"
@@ -37,6 +37,11 @@ CONF_ESCALATION_MINUTES: Final = "escalation_minutes"
 CONF_SMS_SERVICE: Final = "sms_service"
 CONF_AWAY_MODE: Final = "away_mode"
 CONF_PEOPLE: Final = "people"  # {person entity: [notify services]}: overrides the channels found
+# [person entity]: people who are never notified (technical accounts, a wall tablet…), listed apart in the panel.
+CONF_EXCLUDED_PEOPLE: Final = "excluded_people"
+# {person entity: entity}: where a person's presence is read instead of the person's own state (a binary sensor of a
+# room presence system such as ESPresence, an input_boolean, a device tracker): `on` or `home` is at home.
+CONF_PRESENCE: Final = "presence"
 CONF_RETENTION_DAYS: Final = "retention_days"
 # {source key: rule} — name, icon, color, priority, people, ignore_quiet, dedup_minutes, muted (see sources.py).
 CONF_SOURCES: Final = "sources"
