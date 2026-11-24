@@ -123,6 +123,7 @@ PANEL_STATE = {
             "home": True,
             "channels": ["notify.mobile_app_pixel_8"],
             "custom": False,
+            "presence": "binary_sensor.alex_bluetooth_presence",
         },
         {
             "entity_id": "person.sam",
@@ -130,6 +131,14 @@ PANEL_STATE = {
             "home": False,
             "channels": ["notify.mobile_app_iphone", "notify.mobile_app_ipad"],
             "custom": True,
+        },
+        {
+            "entity_id": "person.wall_tablet",
+            "name": "Wall tablet",
+            "home": True,
+            "channels": [],
+            "custom": False,
+            "excluded": True,
         },
     ],
     "services": [
@@ -150,6 +159,8 @@ PANEL_STATE = {
         "retention_days": 7,
         "capture_persistent": True,
         "capture_repairs": False,
+        "excluded_people": ["person.wall_tablet"],
+        "presence": {"person.alex": "binary_sensor.alex_bluetooth_presence"},
         "sources": {s["key"]: s["rule"] for s in SOURCES if s["rule"]},
     },
     "sources": SOURCES,
@@ -185,7 +196,13 @@ def page_html(theme, width):
 
 
 def hass(theme, state=None):
-    states = {}
+    states = {
+        "binary_sensor.alex_bluetooth_presence": {
+            "state": "on",
+            "attributes": {"friendly_name": "Alex Bluetooth presence", "device_class": "presence"},
+            "last_updated": NOW,
+        }
+    }
     if state is not None:
         states["sensor.notify_hub_pending"] = {
             "state": str(state["counts"]["pending"]),

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 - 2026-11-24
+
+### Features
+- **People left out** (#18): in the Routing tab, *Do not notify this person* (under *Channels*) keeps a person out of every notification, named ones included — technical accounts (an MCP or MQTT user), a wall tablet. They are listed last, folded to their name (*Not notified*), and no longer offered in a source's people. Option `excluded_people`.
+- **Presence from a sensor** (#18): a person's presence can be read from a binary sensor (a room presence system such as ESPresence), an input boolean or a device tracker instead of their location: `on` or `home` is at home; while it is unavailable, the person's location counts. Picked under *Channels* (presence, occupancy and motion sensors first), shown next to *Home* / *Away*. Option `presence`.
+
 ## 0.8.0 - 2026-11-24
 
 ### Features

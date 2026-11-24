@@ -16,8 +16,10 @@ from .const import (
     CONF_DEDUP_MINUTES,
     CONF_DIGEST_TIMES,
     CONF_ESCALATION_MINUTES,
+    CONF_EXCLUDED_PEOPLE,
     CONF_HIDE_HEADER,
     CONF_PEOPLE,
+    CONF_PRESENCE,
     CONF_QUIET_ENABLED,
     CONF_QUIET_END,
     CONF_QUIET_START,
@@ -49,6 +51,8 @@ OPTION_SCHEMA = vol.Schema(
         vol.Optional(CONF_AWAY_MODE): bool,
         vol.Optional(CONF_RETENTION_DAYS): vol.All(vol.Coerce(int), vol.Range(min=1, max=90)),
         vol.Optional(CONF_PEOPLE): {str: [str]},
+        vol.Optional(CONF_EXCLUDED_PEOPLE): [str],
+        vol.Optional(CONF_PRESENCE): {str: vol.Any(None, str)},
         vol.Optional(CONF_HIDE_HEADER): vol.In(HIDE_HEADER_MODES),
         vol.Optional(CONF_SOURCES): SOURCES_SCHEMA,
         vol.Optional(CONF_CAPTURE_PERSISTENT): bool,
@@ -169,6 +173,12 @@ def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
         )
     if CONF_PEOPLE in changes:
         changes[CONF_PEOPLE] = {person: channels for person, channels in changes[CONF_PEOPLE].items() if channels}
+    if CONF_EXCLUDED_PEOPLE in changes:
+        changes[CONF_EXCLUDED_PEOPLE] = sorted(set(changes[CONF_EXCLUDED_PEOPLE]))
+    if CONF_PRESENCE in changes:
+        changes[CONF_PRESENCE] = {
+            person: entity.strip() for person, entity in changes[CONF_PRESENCE].items() if (entity or "").strip()
+        }
     if CONF_SOURCES in changes:
         changes[CONF_SOURCES] = clean_sources(changes[CONF_SOURCES])
     options = {**hub.entry.options, **changes}

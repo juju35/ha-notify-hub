@@ -246,6 +246,20 @@ export class NotifyHubPanel extends HTMLElement {
       this._ws({ type: 'notify_hub/save', options: { [key]: el.checked } }, this._t().saved);
       return;
     }
+    if (el?.dataset?.exclude) {
+      // A person who is never notified (a technical account, a wall tablet): listed apart, at the bottom.
+      var out = new Set(this._options().excluded_people || []);
+      if (el.checked) out.add(el.dataset.exclude);
+      else out.delete(el.dataset.exclude);
+      this._ws({ type: 'notify_hub/save', options: { excluded_people: [...out] } }, this._t().saved);
+      return;
+    }
+    if (el?.dataset?.presence) {
+      // Where the person's presence is read: their own location (empty), or a binary sensor, input boolean, tracker.
+      var presence = Object.assign({}, this._options().presence || {}, { [el.dataset.presence]: el.value || null });
+      this._ws({ type: 'notify_hub/save', options: { presence } }, this._t().saved);
+      return;
+    }
     if (el?.dataset?.channel) {
       var person = el.dataset.person;
       var current = (this._data?.people || []).find((p) => p.entity_id === person)?.channels || [];
@@ -418,8 +432,10 @@ export class NotifyHubPanel extends HTMLElement {
     var people = d.people || [];
     var opts = this._options();
     var esc = opts.escalation_minutes || [5, 10];
-    var cards = people.length
-      ? people
+    // The people never notified come last, folded to their name.
+    var ordered = [...people.filter((p) => !p.excluded), ...people.filter((p) => p.excluded)];
+    var cards = ordered.length
+      ? ordered
           .map((p) => {
             var editing = this._editing === p.entity_id;
             var own = (d.sources || []).filter((x) => x.rule?.people?.includes(p.entity_id));
@@ -427,15 +443,25 @@ export class NotifyHubPanel extends HTMLElement {
               ? `<div class="chips"><span class="muted">${nhpEsc(t.p_sources)}</span>${own.map((x) => `<span class="chip static">${nhpAvatar({ domain: x.domain, icon: x.rule.icon, color: x.rule.color }, !!this._hass.themes?.darkMode, 'av sm')}${nhpEsc(x.name)}</span>`).join('')}</div>`
               : '';
             var channels = p.channels.length ? p.channels.map((c) => `<span class="chip static">${nhpEsc(this._channel(c))}</span>`).join('') : `<span class="muted">${nhpEsc(t.no_channel)}</span>`;
+            var id = nhpEsc(p.entity_id);
+            var exclude = `<label class="check"><input type="checkbox" data-exclude="${id}"${p.excluded ? ' checked' : ''}><span>${nhpEsc(t.p_exclude)}</span></label>`;
+            var presence = `<label class="field"><span>${nhpEsc(t.p_presence)}</span><select data-presence="${id}"><option value="">${nhpEsc(t.p_presence_person)}</option>${this._presenceChoices(p.presence)
+              .map((e) => `<option value="${nhpEsc(e.id)}"${e.id === p.presence ? ' selected' : ''}>${nhpEsc(e.name)}</option>`)
+              .join('')}</select><small>${nhpEsc(t.p_presence_help)}</small></label>`;
             var picker = editing
-              ? `<div class="picker">${(d.services || []).map((s) => `<label class="check"><input type="checkbox" data-person="${nhpEsc(p.entity_id)}" data-channel="${nhpEsc(s)}"${p.channels.includes(s) ? ' checked' : ''}><span>${nhpEsc(this._channel(s))}</span></label>`).join('')}
-                  ${p.custom ? `<button type="button" class="btn" data-act="reset" data-person="${nhpEsc(p.entity_id)}">${nhpEsc(t.reset)}</button>` : ''}</div>`
+              ? p.excluded
+                ? `<div class="picker">${exclude}</div>`
+                : `<div class="picker">${(d.services || []).map((s) => `<label class="check"><input type="checkbox" data-person="${id}" data-channel="${nhpEsc(s)}"${p.channels.includes(s) ? ' checked' : ''}><span>${nhpEsc(this._channel(s))}</span></label>`).join('')}
+                  ${p.custom ? `<button type="button" class="btn" data-act="reset" data-person="${id}">${nhpEsc(t.reset)}</button>` : ''}</div>
+                  <div class="picker col1">${presence}${exclude}</div>`
               : '';
-            return `<div class="card p-${p.home ? 'home' : 'away'}">
+            var where = p.presence ? `${p.home ? t.home : t.away} (${this._entityName(p.presence)})` : p.home ? t.home : t.away;
+            var sub = p.excluded ? t.p_excluded : `${where} · ${p.custom ? t.custom : t.found}`;
+            return `<div class="card p-${p.excluded ? 'excluded' : p.home ? 'home' : 'away'}">
               <div class="phead"><span class="dot">${nhpIcon('person')}</span>
-                <span class="txt"><span class="nm">${nhpEsc(p.name)}</span><span class="sub">${nhpEsc(p.home ? t.home : t.away)} · ${nhpEsc(p.custom ? t.custom : t.found)}</span></span>
-                <button type="button" class="btn" data-act="edit" data-person="${nhpEsc(p.entity_id)}" aria-expanded="${editing}">${nhpEsc(t.channels)}</button></div>
-              <div class="chips">${channels}</div>${dedicated}${picker}
+                <span class="txt"><span class="nm">${nhpEsc(p.name)}</span><span class="sub">${nhpEsc(sub)}</span></span>
+                <button type="button" class="btn" data-act="edit" data-person="${id}" aria-expanded="${editing}">${nhpEsc(t.channels)}</button></div>
+              ${p.excluded ? '' : `<div class="chips">${channels}</div>${dedicated}`}${picker}
             </div>`;
           })
           .join('')
@@ -444,6 +470,23 @@ export class NotifyHubPanel extends HTMLElement {
       <section class="col"><h2>${nhpEsc(t.escalation)}</h2><div class="card"><p class="text">${nhpEsc(nhpFill(t.escalation_text, { a: esc[0], b: esc[1] }))}</p>
       <div class="chips"><span class="chip static">${nhpEsc(t.p_alert.split(' (')[0])}</span><span class="muted">→ ${esc[0]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(t.f_all)}</span><span class="muted">→ ${esc[1]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(opts.sms_service ? this._channel(opts.sms_service) : t.sms_none)}</span></div>
       <div class="actions"><button type="button" class="btn danger" data-act="test" data-priority="critical">${nhpEsc(t.test_critical)}</button></div></div></section></div>`;
+  }
+
+  _entityName(id) {
+    return this._hass?.states?.[id]?.attributes?.friendly_name || id;
+  }
+
+  // The entities a person's presence can be read from: binary sensors (presence, occupancy and motion first), input
+  // booleans and device trackers, by name; the one set is kept even when it is gone.
+  _presenceChoices(current) {
+    var states = this._hass?.states || {};
+    var first = new Set(['presence', 'occupancy', 'motion']);
+    var list = Object.keys(states)
+      .filter((id) => /^(binary_sensor|input_boolean|device_tracker)\./.test(id))
+      .map((id) => ({ id, name: this._entityName(id), rank: id.startsWith('binary_sensor.') && first.has(states[id].attributes?.device_class) ? 0 : 1 }))
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+    if (current && !states[current]) list.unshift({ id: current, name: current, rank: 0 });
+    return list;
   }
 
   _rules(d, t) {
@@ -514,6 +557,7 @@ export class NotifyHubPanel extends HTMLElement {
       .join('');
     var chosen = new Set(v.people || []);
     var people = (d.people || [])
+      .filter((p) => !p.excluded || chosen.has(p.entity_id))
       .map((p) => `<label class="check"><input type="checkbox" data-src="people" data-person="${nhpEsc(p.entity_id)}"${chosen.has(p.entity_id) ? ' checked' : ''}><span>${nhpEsc(p.name)}</span></label>`)
       .join('');
     var color = /^#[0-9a-f]{6}$/i.test(v.color || '') ? v.color : '#2563eb';
@@ -661,7 +705,9 @@ export class NotifyHubPanel extends HTMLElement {
       .cols { display: flex; flex-wrap: wrap; gap: 20px; } .col { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
       .card { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
       .phead { display: flex; align-items: center; gap: 10px; }
-      .p-home { --c: var(--ok); } .p-away { --c: var(--idle); }
+      .p-home { --c: var(--ok); } .p-away, .p-excluded { --c: var(--idle); }
+      .p-excluded .phead .dot, .p-excluded .phead .txt { opacity: .55; }
+      .picker.col1 { flex-direction: column; align-items: stretch; gap: 10px; }
       .picker { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 6px; border-top: 1px solid var(--divider-color, rgba(127,127,127,.15)); }
       .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
       .text { margin: 0; font-size: 13px; color: var(--secondary-text-color); }
