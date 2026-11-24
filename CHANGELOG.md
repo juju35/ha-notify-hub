@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0 - 2026-11-24
+
+### Features
+- Notify entities as channels (#14): the integrations on Home Assistant's notify entity platform (Telegram bot, …) are offered in the channel pickers (people, SMS escalation), named after the entity, and sent to with `notify.send_message` (message and title). `notify.send_message` itself, which needs an entity, is no longer offered as a channel; the hub's own entity never is.
+
 ## 0.7.3 - 2026-11-24
 
 ### Maintenance

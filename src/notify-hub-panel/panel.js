@@ -69,6 +69,11 @@ export class NotifyHubPanel extends HTMLElement {
     window.removeEventListener('popstate', this._onPop);
   }
 
+  // A channel's label: a notify entity's name (Telegram bot, …), else the service without its `notify.`.
+  _channel(id) {
+    return this._hass?.states?.[id]?.attributes?.friendly_name || String(id).replace('notify.', '');
+  }
+
   _t() {
     var raw = String(this._hass?.locale?.language || this._hass?.language || 'en');
     var lang = NH_PANEL_I18N[raw] ? raw : NH_PANEL_I18N[raw.split('-')[0]] ? raw.split('-')[0] : 'en';
@@ -421,9 +426,9 @@ export class NotifyHubPanel extends HTMLElement {
             var dedicated = own.length
               ? `<div class="chips"><span class="muted">${nhpEsc(t.p_sources)}</span>${own.map((x) => `<span class="chip static">${nhpAvatar({ domain: x.domain, icon: x.rule.icon, color: x.rule.color }, !!this._hass.themes?.darkMode, 'av sm')}${nhpEsc(x.name)}</span>`).join('')}</div>`
               : '';
-            var channels = p.channels.length ? p.channels.map((c) => `<span class="chip static">${nhpEsc(c.replace('notify.', ''))}</span>`).join('') : `<span class="muted">${nhpEsc(t.no_channel)}</span>`;
+            var channels = p.channels.length ? p.channels.map((c) => `<span class="chip static">${nhpEsc(this._channel(c))}</span>`).join('') : `<span class="muted">${nhpEsc(t.no_channel)}</span>`;
             var picker = editing
-              ? `<div class="picker">${(d.services || []).map((s) => `<label class="check"><input type="checkbox" data-person="${nhpEsc(p.entity_id)}" data-channel="${nhpEsc(s)}"${p.channels.includes(s) ? ' checked' : ''}><span>${nhpEsc(s.replace('notify.', ''))}</span></label>`).join('')}
+              ? `<div class="picker">${(d.services || []).map((s) => `<label class="check"><input type="checkbox" data-person="${nhpEsc(p.entity_id)}" data-channel="${nhpEsc(s)}"${p.channels.includes(s) ? ' checked' : ''}><span>${nhpEsc(this._channel(s))}</span></label>`).join('')}
                   ${p.custom ? `<button type="button" class="btn" data-act="reset" data-person="${nhpEsc(p.entity_id)}">${nhpEsc(t.reset)}</button>` : ''}</div>`
               : '';
             return `<div class="card p-${p.home ? 'home' : 'away'}">
@@ -437,7 +442,7 @@ export class NotifyHubPanel extends HTMLElement {
       : `<div class="empty">${nhpEsc(t.no_people)}</div>`;
     return `<div class="cols"><section class="col"><h2>${nhpEsc(t.people)}</h2>${cards}</section>
       <section class="col"><h2>${nhpEsc(t.escalation)}</h2><div class="card"><p class="text">${nhpEsc(nhpFill(t.escalation_text, { a: esc[0], b: esc[1] }))}</p>
-      <div class="chips"><span class="chip static">${nhpEsc(t.p_alert.split(' (')[0])}</span><span class="muted">→ ${esc[0]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(t.f_all)}</span><span class="muted">→ ${esc[1]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(opts.sms_service ? opts.sms_service.replace('notify.', '') : t.sms_none)}</span></div>
+      <div class="chips"><span class="chip static">${nhpEsc(t.p_alert.split(' (')[0])}</span><span class="muted">→ ${esc[0]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(t.f_all)}</span><span class="muted">→ ${esc[1]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(opts.sms_service ? this._channel(opts.sms_service) : t.sms_none)}</span></div>
       <div class="actions"><button type="button" class="btn danger" data-act="test" data-priority="critical">${nhpEsc(t.test_critical)}</button></div></div></section></div>`;
   }
 
@@ -534,7 +539,7 @@ export class NotifyHubPanel extends HTMLElement {
     var esc = o.escalation_minutes || [5, 10];
     var services = (d.services || []).filter((s) => !s.startsWith('notify.mobile_app_'));
     return `<div class="cols"><section class="col"><h2>${nhpEsc(t.escalation)}</h2><div class="card form">
-        <label class="field"><span>${nhpEsc(t.sms)}</span><select data-key="sms_service"><option value="">${nhpEsc(t.sms_none)}</option>${services.map((s) => `<option value="${nhpEsc(s)}"${s === o.sms_service ? ' selected' : ''}>${nhpEsc(s)}</option>`).join('')}</select></label>
+        <label class="field"><span>${nhpEsc(t.sms)}</span><select data-key="sms_service"><option value="">${nhpEsc(t.sms_none)}</option>${services.map((s) => `<option value="${nhpEsc(s)}"${s === o.sms_service ? ' selected' : ''}>${nhpEsc(this._channel(s))}</option>`).join('')}</select></label>
         <div class="grid2"><label class="field"><span>${nhpEsc(t.esc_first)} (${nhpEsc(t.minutes)})</span><input type="number" min="1" max="240" data-key="esc0" value="${esc[0]}"></label>
         <label class="field"><span>${nhpEsc(t.esc_second)} (${nhpEsc(t.minutes)})</span><input type="number" min="1" max="240" data-key="esc1" value="${esc[1]}"></label></div>
         <label class="field"><span>${nhpEsc(t.retention)} (${nhpEsc(t.days)})</span><input type="number" min="1" max="90" data-key="retention_days" value="${nhpEsc(o.retention_days ?? 7)}"></label>

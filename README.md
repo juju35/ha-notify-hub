@@ -27,6 +27,7 @@ Home Assistant integration that puts **one hub in front of all your notification
 - **One action for every automation** — `notify_hub.send` with a message, a priority and optionally a topic, a source and the people concerned; no more list of `notify.mobile_app_*` to keep up to date
 - **A notify target for every integration** — `notify.notify_hub` (action and entity) can be picked wherever an integration asks for a notify service
 - **People, not phones** — each person's phones are found from their `person` entity (Companion app device trackers); override them per person in the panel
+- **Any notify channel** — besides the legacy `notify.*` actions, the **notify entities** (Telegram bot, …) can be picked as a person's channel or the SMS escalation; the hub sends to them with `notify.send_message` (message and title)
 - **Four priorities**
   - `critical`: sent at once to everyone concerned, through quiet hours, with the critical sound (iOS) and an **Acknowledge** button
   - `alert`: to the people at home (everyone when nobody is), held during quiet hours

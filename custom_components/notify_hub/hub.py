@@ -81,6 +81,8 @@ from .strings import text
 
 _LOGGER = logging.getLogger(__name__)
 
+SERVICE_SEND_MESSAGE = "send_message"  # notify.send_message: the notify entities' action
+
 # The statuses that count as "handled" for the duplicate check (a failed or duplicate one does not block the next).
 _HANDLED = {STATUS_DELIVERED, STATUS_HELD, STATUS_GROUPED, STATUS_PENDING, STATUS_ACKNOWLEDGED}
 # Lines listed in a digest message; the rest are counted.
@@ -221,9 +223,22 @@ class NotifyHub:
         return found
 
     def notify_services(self) -> list[str]:
-        """Every notify service, for the panel's channel pickers."""
+        """Every channel for the panel's pickers: the legacy notify services and the notify entities (Telegram
+        bot, …). Not the hub itself (a loop), nor `notify.send_message`, which needs an entity to send to."""
         services = self.hass.services.async_services().get("notify", {})
-        return sorted(f"notify.{name}" for name in services if name != DOMAIN)  # not the hub itself: a loop
+        legacy = {f"notify.{name}" for name in services if name not in (DOMAIN, SERVICE_SEND_MESSAGE)}
+        return sorted(legacy | set(self._notify_entities()))
+
+    def _own_entities(self) -> set[str]:
+        """The hub's own notify entities (`notify.notify_hub`, whatever it was renamed to)."""
+        entities = er.async_get(self.hass)
+        own = {e.entity_id for e in er.async_entries_for_config_entry(entities, self.entry.entry_id)}
+        return own | {f"notify.{DOMAIN}"}
+
+    def _notify_entities(self) -> list[str]:
+        """The notify entities of the other integrations, sent to with `notify.send_message`."""
+        own = self._own_entities()
+        return [e for e in self.hass.states.async_entity_ids("notify") if e not in own]
 
     def _targets(self, names: list[str] | None, *, present_only: bool) -> list[dict[str, Any]]:
         """The people to notify: those named (entity or name), else those at home (`present_only`), else everyone."""
@@ -383,13 +398,19 @@ class NotifyHub:
 
     async def _call(self, channel: str, entry: dict[str, Any], *, critical: bool) -> bool:
         domain, _, service = channel.partition(".")
-        if domain != "notify" or service == DOMAIN or not self.hass.services.has_service(domain, service):
-            _LOGGER.warning("Notify Hub: %s is not a notify service", channel)
-            return False
         payload: dict[str, Any] = {"message": entry["message"]}
         if entry["title"]:
             payload["title"] = entry["title"]
-        payload["data"] = self._mobile_data(entry, critical=critical, mobile=service.startswith("mobile_app_"))
+        legacy = service not in (DOMAIN, SERVICE_SEND_MESSAGE) and self.hass.services.has_service(domain, service)
+        if domain == "notify" and legacy:
+            payload["data"] = self._mobile_data(entry, critical=critical, mobile=service.startswith("mobile_app_"))
+        elif domain == "notify" and channel not in self._own_entities() and self.hass.states.get(channel) is not None:
+            # A notify entity: `notify.send_message` takes a message and a title, no `data`.
+            payload["entity_id"] = channel
+            service = SERVICE_SEND_MESSAGE
+        else:
+            _LOGGER.warning("Notify Hub: %s is not a notify service or entity", channel)
+            return False
         token = SENDING.set(True)
         try:
             await self.hass.services.async_call(domain, service, payload, blocking=True)
