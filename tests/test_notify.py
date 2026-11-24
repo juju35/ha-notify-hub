@@ -98,3 +98,27 @@ async def test_unloaded(hass: HomeAssistant, sent) -> None:
     entry = await setup_hub(hass)
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert not hass.services.has_service("notify", DOMAIN)
+
+
+async def test_notify_entity_channel(hass: HomeAssistant, sent) -> None:
+    """A notify entity (Telegram bot, …) is a channel: offered in the pickers, sent to with notify.send_message."""
+    people(hass)
+    hass.states.async_set("notify.telegram_bot_1_2", "unknown", {"friendly_name": "Telegram"})
+    received: list[dict] = []
+
+    async def send_message(call) -> None:
+        received.append(dict(call.data))
+
+    entry = await setup_hub(hass)
+    hass.services.async_register("notify", "send_message", send_message)  # in place of the notify platform's
+    hub = hub_of(hass)
+    channels = hub.notify_services()
+    assert "notify.telegram_bot_1_2" in channels
+    assert "notify.send_message" not in channels, "needs an entity: never a channel on its own"
+    assert "notify.notify_hub" not in channels
+    options = {**entry.options, "people": {"person.anne": ["notify.telegram_bot_1_2"]}}
+    hass.config_entries.async_update_entry(entry, options=options)
+    await hass.async_block_till_done()
+    await hass.services.async_call(DOMAIN, "send", {"message": "Door open", "title": "Home"}, blocking=True)
+    assert received == [{"entity_id": "notify.telegram_bot_1_2", "message": "Door open", "title": "Home"}]
+    assert hub.journal[0]["status"] == "delivered"
