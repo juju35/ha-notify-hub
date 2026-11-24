@@ -5,3 +5,6 @@ __pycache__/
 .venv/
 report/
 node_modules
+# Assembled from src/<stem>/ by scripts/build-frontend.mjs (not committed)
+custom_components/notify_hub/frontend/notify-hub-panel.js
+custom_components/notify_hub/frontend/notify-hub-card.js

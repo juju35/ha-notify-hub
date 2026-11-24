@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.3 - 2026-11-24
+
+### Maintenance
+- The frontend source is split into ES modules: `src/notify-hub-panel/` (entry `src/notify-hub-panel/index.js`), `src/notify-hub-card/` (entry `src/notify-hub-card/index.js`), cut at its sections, with the translations in one file per language (`i18n/<lang>.js`). `scripts/build-frontend.mjs` assembles them, in their original order, into `custom_components/notify_hub/frontend/notify-hub-panel.js`, `custom_components/notify_hub/frontend/notify-hub-card.js`, no longer committed; the tests, the screenshots and the release build them first. The release zip is unchanged.
+
 ## 0.7.2 - 2026-11-22
 
 ### Performance
