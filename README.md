@@ -213,9 +213,12 @@ Every option is in the visual editor.
 
 ## Development
 
+The frontend source is split into ES modules under `src/notify-hub-panel/` (entry `src/notify-hub-panel/index.js`), `src/notify-hub-card/` (entry `src/notify-hub-card/index.js`). `node scripts/build-frontend.mjs` (or `npm run build`) assembles them into `custom_components/notify_hub/frontend/notify-hub-panel.js`, `custom_components/notify_hub/frontend/notify-hub-card.js`, not committed: build before the tests, the screenshots and the release. Modules share one scope once assembled, so top-level names stay unique; a new module must be listed in its `index.js`.
+
 ```bash
+npm ci && npm run build          # assembles the panel and the card from src/ (not committed)
 pip install -r requirements_test.txt && pytest
-npm install --no-save acorn@8.19.0 && node scripts/split-frontend.mjs --check   # the translation split the release makes
+node scripts/split-frontend.mjs --check   # the translation split the release makes
 pip install playwright pillow && playwright install chromium
 python scripts/screenshots.py    # renders the stills and the GIF (needs ffmpeg) into screenshots/
 python scripts/layout_check.py   # the card and the panel patch their DOM in place on state updates
@@ -223,7 +226,7 @@ python scripts/layout_check.py   # the card and the panel patch their DOM in pla
 
 ### Releasing
 
-1. Bump the version in `custom_components/notify_hub/manifest.json`, `const.py` (`VERSION`) and the version constants of `frontend/notify-hub-panel.js` and `frontend/notify-hub-card.js` (the **Version consistency** check compares them)
+1. Bump the version in `custom_components/notify_hub/manifest.json`, `const.py` (`VERSION`) and the version constants of `src/notify-hub-panel/base.js` and `src/notify-hub-card/card.js` (the **Version consistency** check compares them)
 2. Add a `## <version>` section at the top of [CHANGELOG.md](https://github.com/juju35/ha-notify-hub/blob/main/CHANGELOG.md)
 3. Push to `main`: the **Release** workflow creates the tag and the GitHub release with the changelog section as notes
 

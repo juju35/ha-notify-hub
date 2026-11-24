@@ -40,8 +40,8 @@ jobs:
             grep -q "$2" "$1" || { echo "::error file=$1::version not $VERSION here (expected: $2)"; exit 1; }
           }
           check custom_components/notify_hub/const.py "^VERSION: Final = \"$VERSION\"$"
-          check custom_components/notify_hub/frontend/notify-hub-panel.js "^var NOTIFY_HUB_PANEL_VERSION = '$VERSION';$"
-          check custom_components/notify_hub/frontend/notify-hub-card.js "^var NOTIFY_HUB_CARD_VERSION = '$VERSION';$"
+          check src/notify-hub-panel/base.js "^export var NOTIFY_HUB_PANEL_VERSION = '$VERSION';$"
+          check src/notify-hub-card/card.js "^export var NOTIFY_HUB_CARD_VERSION = '$VERSION';$"
           echo "Version $VERSION everywhere"
 
   hassfest:
@@ -60,6 +60,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The frontend files are assembled from src/ (scripts/build-frontend.mjs); they are not committed.
+      - name: Build the frontend
+        uses: ./.github/actions/build-frontend
 
       # Latest Home Assistant: releases since 2026.3 need Python 3.14 (3.13 would resolve to 2026.2).
       - name: Set up Python
@@ -92,6 +96,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # The frontend files are assembled from src/ (scripts/build-frontend.mjs); they are not committed.
+      - name: Build the frontend
+        uses: ./.github/actions/build-frontend
+
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -111,13 +119,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
+      # The frontend files are assembled from src/ (scripts/build-frontend.mjs); they are not committed.
+      - name: Build the frontend
+        uses: ./.github/actions/build-frontend
 
       # Splits a copy of the frontend as the release does, and rebuilds every table to check it.
       - name: Check the translation split
         run: |
-          npm install --no-save --no-package-lock acorn@8.19.0
           node scripts/split-frontend.mjs --check
