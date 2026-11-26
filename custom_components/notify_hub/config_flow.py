@@ -22,10 +22,14 @@ from homeassistant.helpers.selector import (
     TimeSelector,
 )
 
+from .capture import CAPTURE_RULES_SCHEMA
 from .const import (
     CONF_AWAY_MODE,
+    CONF_CAPTURE_DELAY,
+    CONF_CAPTURE_GRACE,
     CONF_CAPTURE_PERSISTENT,
     CONF_CAPTURE_REPAIRS,
+    CONF_CAPTURE_RULES,
     CONF_DEDUP_MINUTES,
     CONF_DIGEST_TIMES,
     CONF_ESCALATION_MINUTES,
@@ -96,15 +100,25 @@ class NotifyHubOptionsFlow(OptionsFlow):
                 sources = clean_sources(SOURCES_SCHEMA(user_input.get(CONF_SOURCES) or {}))
             except vol.Invalid:
                 errors[CONF_SOURCES] = "invalid_sources"
-            else:
-                return self.async_create_entry(
-                    data={
-                        **current,
-                        CONF_SOURCES: sources,
-                        CONF_CAPTURE_PERSISTENT: bool(user_input.get(CONF_CAPTURE_PERSISTENT)),
-                        CONF_CAPTURE_REPAIRS: bool(user_input.get(CONF_CAPTURE_REPAIRS)),
-                    }
-                )
+            try:
+                rules = CAPTURE_RULES_SCHEMA(user_input.get(CONF_CAPTURE_RULES) or [])
+            except vol.Invalid:
+                errors[CONF_CAPTURE_RULES] = "invalid_capture_rules"
+            if not errors:
+                data = {
+                    **current,
+                    CONF_SOURCES: sources,
+                    CONF_CAPTURE_PERSISTENT: bool(user_input.get(CONF_CAPTURE_PERSISTENT)),
+                    CONF_CAPTURE_REPAIRS: bool(user_input.get(CONF_CAPTURE_REPAIRS)),
+                    CONF_CAPTURE_GRACE: int(user_input.get(CONF_CAPTURE_GRACE) or 0),
+                    CONF_CAPTURE_DELAY: int(user_input.get(CONF_CAPTURE_DELAY) or 0),
+                    CONF_CAPTURE_RULES: rules,
+                }
+                # Left at their default: kept out of the options.
+                for key in (CONF_CAPTURE_GRACE, CONF_CAPTURE_DELAY, CONF_CAPTURE_RULES):
+                    if not data[key]:
+                        data.pop(key)
+                return self.async_create_entry(data=data)
         schema = vol.Schema(
             {
                 vol.Optional(
@@ -114,6 +128,11 @@ class NotifyHubOptionsFlow(OptionsFlow):
                     CONF_CAPTURE_PERSISTENT, default=bool(current.get(CONF_CAPTURE_PERSISTENT))
                 ): BooleanSelector(),
                 vol.Required(CONF_CAPTURE_REPAIRS, default=bool(current.get(CONF_CAPTURE_REPAIRS))): BooleanSelector(),
+                vol.Required(CONF_CAPTURE_GRACE, default=int(current.get(CONF_CAPTURE_GRACE) or 0)): _minutes(0, 120),
+                vol.Required(CONF_CAPTURE_DELAY, default=int(current.get(CONF_CAPTURE_DELAY) or 0)): _minutes(0, 1440),
+                vol.Optional(
+                    CONF_CAPTURE_RULES, description={"suggested_value": list(current.get(CONF_CAPTURE_RULES) or [])}
+                ): ObjectSelector(),
             }
         )
         return self.async_show_form(step_id="sources", data_schema=schema, errors=errors)

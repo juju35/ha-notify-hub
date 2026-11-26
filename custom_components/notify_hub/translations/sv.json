@@ -51,16 +51,23 @@
         "data": {
           "sources": "Regler per källa",
           "capture_persistent": "Beständiga aviseringar",
-          "capture_repairs": "Nya reparationer"
+          "capture_repairs": "Nya reparationer",
+          "capture_grace_minutes": "Respitperiod efter start",
+          "capture_delay_minutes": "Fördröjning före sändning",
+          "capture_rules": "Fångstregler"
         },
         "data_description": {
           "capture_persistent": "Aviseringarna som integrationer visar i Home Assistant (klockan i sidofältet) går också genom hubben.",
-          "capture_repairs": "Varje ny reparation går också genom hubben: ett larm för ett fel, en info för en varning."
+          "capture_repairs": "Varje ny reparation går också genom hubben: ett larm för ett fel, en info för en varning.",
+          "capture_grace_minutes": "Fångade aviseringar från dessa minuter efter att Home Assistant startade väntar till periodens slut och släpps om de har försvunnit då (0: ingen).",
+          "capture_delay_minutes": "Varje fångad avisering väntar så länge och skickas bara om den fortfarande finns (0: direkt).",
+          "capture_rules": "En lista med regler, den första som matchar gäller: kind (repair eller persistent), domain, id (med * som jokertecken, t.ex. restart_required_*), sedan action (send, ignore, journal, digest), delay_minutes och topic (gemensamt ämne: samma incident, skickas en gång)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Ogiltig regel: kontrollera fälten, prioriteten, ikonen (mdi:…) och färgen (#rrggbb)."
+      "invalid_sources": "Ogiltig regel: kontrollera fälten, prioriteten, ikonen (mdi:…) och färgen (#rrggbb).",
+      "invalid_capture_rules": "Ogiltig fångstregel: kontrollera kind, action, delay_minutes och topic."
     }
   },
   "entity": {

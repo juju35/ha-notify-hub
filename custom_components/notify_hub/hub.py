@@ -323,11 +323,13 @@ class NotifyHub:
         data: dict[str, Any] | None = None,
         context: Context | None = None,
         found: dict[str, Any] | None = None,
+        journal_only: bool = False,
     ) -> dict[str, Any]:
         """Handle one notification; its journal entry (with its `status`) is returned.
 
         The source is resolved from `source` (else the caller found from `context`), unless `found` gives it already
-        (a captured notification); its rule may force the priority and the people."""
+        (a captured notification); its rule may force the priority and the people. `journal_only` (a capture rule):
+        kept in the journal and sent to nobody, like a muted source."""
         now = dt_util.utcnow()
         src = found or resolve(self.hass, source, context)
         rule = self.source_rule(src["key"])
@@ -356,7 +358,7 @@ class NotifyHub:
         if isinstance(rule.get("dedup_minutes"), int | float):
             dedup = timedelta(minutes=float(rule["dedup_minutes"]))
         # A muted source is kept quiet, but never its critical notifications (a leak, smoke…).
-        if rule.get("muted") and priority != PRIORITY_CRITICAL:
+        if (rule.get("muted") or journal_only) and priority != PRIORITY_CRITICAL:
             entry["status"] = STATUS_MUTED
         elif self._duplicate(entry, now, dedup):
             entry["status"] = STATUS_DUPLICATE

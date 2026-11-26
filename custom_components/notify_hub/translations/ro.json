@@ -51,16 +51,23 @@
         "data": {
           "sources": "Reguli pe sursă",
           "capture_persistent": "Notificări persistente",
-          "capture_repairs": "Reparații noi"
+          "capture_repairs": "Reparații noi",
+          "capture_grace_minutes": "Perioadă de grație după pornire",
+          "capture_delay_minutes": "Întârziere înainte de trimitere",
+          "capture_rules": "Reguli de captură"
         },
         "data_description": {
           "capture_persistent": "Notificările pe care integrările le publică în Home Assistant (clopoțelul barei laterale) trec și prin hub.",
-          "capture_repairs": "Fiecare reparație nouă trece și prin hub: o alertă pentru o eroare, o informare pentru un avertisment."
+          "capture_repairs": "Fiecare reparație nouă trece și prin hub: o alertă pentru o eroare, o informare pentru un avertisment.",
+          "capture_grace_minutes": "Notificările capturate în aceste minute după pornirea Home Assistant așteaptă sfârșitul perioadei și sunt renunțate dacă au dispărut între timp (0: niciuna).",
+          "capture_delay_minutes": "Fiecare notificare capturată așteaptă atât și este trimisă doar dacă mai există (0: imediat).",
+          "capture_rules": "O listă de reguli, câștigă prima care se potrivește: kind (repair sau persistent), domain, id (cu * ca wildcard, ex. restart_required_*), apoi action (send, ignore, journal, digest), delay_minutes și topic (subiect comun: același incident, trimis o dată)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Regulă invalidă: verificați câmpurile, prioritatea, pictograma (mdi:…) și culoarea (#rrggbb)."
+      "invalid_sources": "Regulă invalidă: verificați câmpurile, prioritatea, pictograma (mdi:…) și culoarea (#rrggbb).",
+      "invalid_capture_rules": "Regulă de captură invalidă: verificați kind, action, delay_minutes și topic."
     }
   },
   "entity": {

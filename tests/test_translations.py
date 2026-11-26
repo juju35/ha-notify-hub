@@ -58,6 +58,7 @@ LATIN_ALLOWED = re.compile(
     r"Notify Hub|\bnotify(?:\.free_mobile)?\b|\b(?:critical|alert|info|digest)\b|\{[^}]*\}|\bID\b"
     r"|Home Assistant|mdi:|#rrggbb"
     r"|\b(?:hue|automation|name|icon|color|priority|people|ignore_quiet|dedup_minutes|muted)\b"
+    r"|\b(?:kind|repair|persistent|domain|id|action|send|ignore|journal|delay_minutes|topic|restart_required_)\b"
 )
 
 

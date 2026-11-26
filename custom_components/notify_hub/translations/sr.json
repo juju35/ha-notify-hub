@@ -51,16 +51,23 @@
         "data": {
           "sources": "Правила по извору",
           "capture_persistent": "Трајна обавештења",
-          "capture_repairs": "Нове поправке"
+          "capture_repairs": "Нове поправке",
+          "capture_grace_minutes": "Период одлагања после покретања",
+          "capture_delay_minutes": "Кашњење пре слања",
+          "capture_rules": "Правила хватања"
         },
         "data_description": {
           "capture_persistent": "Обавештења која интеграције објављују у Home Assistant (звонце бочне траке) такође иду кроз хаб.",
-          "capture_repairs": "Свака нова поправка такође иде кроз хаб: узбуна за грешку, информација за упозорење."
+          "capture_repairs": "Свака нова поправка такође иде кроз хаб: узбуна за грешку, информација за упозорење.",
+          "capture_grace_minutes": "Ухваћена обавештења из ових минута после покретања Home Assistant чекају крај периода и одбацују се ако су у међувремену нестала (0: без).",
+          "capture_delay_minutes": "Свако ухваћено обавештење чека толико и шаље се само ако још постоји (0: одмах).",
+          "capture_rules": "Листа правила, важи прво које одговара: kind (repair или persistent), domain, id (са * као џокером, нпр. restart_required_*), затим action (send, ignore, journal, digest), delay_minutes и topic (заједничка тема: исти инцидент, послато једном)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Неважеће правило: проверите поља, приоритет, иконицу (mdi:…) и боју (#rrggbb)."
+      "invalid_sources": "Неважеће правило: проверите поља, приоритет, иконицу (mdi:…) и боју (#rrggbb).",
+      "invalid_capture_rules": "Неважеће правило хватања: проверите kind, action, delay_minutes и topic."
     }
   },
   "entity": {

@@ -51,16 +51,23 @@
         "data": {
           "sources": "Regeln pro Quelle",
           "capture_persistent": "Dauerhafte Benachrichtigungen",
-          "capture_repairs": "Neue Reparaturen"
+          "capture_repairs": "Neue Reparaturen",
+          "capture_grace_minutes": "Schonfrist nach dem Start",
+          "capture_delay_minutes": "Verzögerung vor dem Senden",
+          "capture_rules": "Erfassungsregeln"
         },
         "data_description": {
           "capture_persistent": "Die Benachrichtigungen, die Integrationen in Home Assistant anzeigen (die Glocke der Seitenleiste), laufen auch über den Hub.",
-          "capture_repairs": "Jede neue Reparatur läuft auch über den Hub: ein Alarm bei einem Fehler, eine Info bei einer Warnung."
+          "capture_repairs": "Jede neue Reparatur läuft auch über den Hub: ein Alarm bei einem Fehler, eine Info bei einer Warnung.",
+          "capture_grace_minutes": "Erfasste Benachrichtigungen aus diesen Minuten nach dem Start von Home Assistant warten bis zu deren Ende und werden verworfen, wenn sie bis dahin verschwunden sind (0: keine).",
+          "capture_delay_minutes": "Jede erfasste Benachrichtigung wartet so lange und wird nur gesendet, wenn sie noch besteht (0: sofort gesendet).",
+          "capture_rules": "Eine Liste von Regeln, die erste passende gilt: kind (repair oder persistent), domain, id (mit * als Platzhalter, z. B. restart_required_*), dann action (send, ignore, journal, digest), delay_minutes und topic (gemeinsames Thema: gleicher Vorfall, einmal gesendet)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Ungültige Regel: Felder, Priorität, Symbol (mdi:…) und Farbe (#rrggbb) prüfen."
+      "invalid_sources": "Ungültige Regel: Felder, Priorität, Symbol (mdi:…) und Farbe (#rrggbb) prüfen.",
+      "invalid_capture_rules": "Ungültige Erfassungsregel: prüfen Sie kind, action, delay_minutes und topic."
     }
   },
   "entity": {

@@ -51,16 +51,23 @@
         "data": {
           "sources": "Avotu noteikumi",
           "capture_persistent": "Pastāvīgie paziņojumi",
-          "capture_repairs": "Jauni labojumi"
+          "capture_repairs": "Jauni labojumi",
+          "capture_grace_minutes": "Labvēlības periods pēc palaišanas",
+          "capture_delay_minutes": "Aizkave pirms sūtīšanas",
+          "capture_rules": "Tveršanas noteikumi"
         },
         "data_description": {
           "capture_persistent": "Paziņojumi, ko integrācijas publicē Home Assistant (sānjoslas zvaniņš), arī iet caur centrmezglu.",
-          "capture_repairs": "Katrs jauns labojums arī iet caur centrmezglu: trauksme kļūdai, informācija brīdinājumam."
+          "capture_repairs": "Katrs jauns labojums arī iet caur centrmezglu: trauksme kļūdai, informācija brīdinājumam.",
+          "capture_grace_minutes": "Paziņojumi, kas notverti šajās minūtēs pēc Home Assistant palaišanas, gaida perioda beigas un tiek atmesti, ja līdz tam pazuduši (0: nav).",
+          "capture_delay_minutes": "Katrs notvertais paziņojums gaida tik ilgi un tiek nosūtīts tikai tad, ja tas vēl pastāv (0: uzreiz).",
+          "capture_rules": "Noteikumu saraksts, darbojas pirmais atbilstošais: kind (repair vai persistent), domain, id (ar * kā aizstājējzīmi, piem., restart_required_*), tad action (send, ignore, journal, digest), delay_minutes un topic (kopīga tēma: viens incidents, nosūtīts vienreiz)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Nederīgs noteikums: pārbaudiet laukus, prioritāti, ikonu (mdi:…) un krāsu (#rrggbb)."
+      "invalid_sources": "Nederīgs noteikums: pārbaudiet laukus, prioritāti, ikonu (mdi:…) un krāsu (#rrggbb).",
+      "invalid_capture_rules": "Nederīgs tveršanas noteikums: pārbaudiet kind, action, delay_minutes un topic."
     }
   },
   "entity": {

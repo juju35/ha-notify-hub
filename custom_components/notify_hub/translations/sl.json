@@ -51,16 +51,23 @@
         "data": {
           "sources": "Pravila virov",
           "capture_persistent": "Trajna obvestila",
-          "capture_repairs": "Nova popravila"
+          "capture_repairs": "Nova popravila",
+          "capture_grace_minutes": "Obdobje odloga po zagonu",
+          "capture_delay_minutes": "Zakasnitev pred pošiljanjem",
+          "capture_rules": "Pravila zajemanja"
         },
         "data_description": {
           "capture_persistent": "Obvestila, ki jih integracije objavijo v Home Assistant (zvonec stranske vrstice), gredo tudi skozi vozlišče.",
-          "capture_repairs": "Vsako novo popravilo gre tudi skozi vozlišče: alarm za napako, informacija za opozorilo."
+          "capture_repairs": "Vsako novo popravilo gre tudi skozi vozlišče: alarm za napako, informacija za opozorilo.",
+          "capture_grace_minutes": "Zajeta obvestila iz teh minut po zagonu Home Assistant počakajo na konec obdobja in se zavržejo, če so medtem izginila (0: brez).",
+          "capture_delay_minutes": "Vsako zajeto obvestilo počaka toliko in se pošlje le, če še obstaja (0: takoj).",
+          "capture_rules": "Seznam pravil, velja prvo ujemajoče: kind (repair ali persistent), domain, id (z * kot nadomestnim znakom, npr. restart_required_*), nato action (send, ignore, journal, digest), delay_minutes in topic (skupna tema: isti dogodek, poslan enkrat)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Neveljavno pravilo: preverite polja, prednost, ikono (mdi:…) in barvo (#rrggbb)."
+      "invalid_sources": "Neveljavno pravilo: preverite polja, prednost, ikono (mdi:…) in barvo (#rrggbb).",
+      "invalid_capture_rules": "Neveljavno pravilo zajemanja: preverite kind, action, delay_minutes in topic."
     }
   },
   "entity": {

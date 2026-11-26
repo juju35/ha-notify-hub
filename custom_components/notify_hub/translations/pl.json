@@ -51,16 +51,23 @@
         "data": {
           "sources": "Reguły źródeł",
           "capture_persistent": "Powiadomienia trwałe",
-          "capture_repairs": "Nowe naprawy"
+          "capture_repairs": "Nowe naprawy",
+          "capture_grace_minutes": "Okres karencji po uruchomieniu",
+          "capture_delay_minutes": "Opóźnienie przed wysłaniem",
+          "capture_rules": "Reguły przechwytywania"
         },
         "data_description": {
           "capture_persistent": "Powiadomienia, które integracje publikują w Home Assistant (dzwonek paska bocznego), też przechodzą przez hub.",
-          "capture_repairs": "Każda nowa naprawa też przechodzi przez hub: alarm dla błędu, informacja dla ostrzeżenia."
+          "capture_repairs": "Każda nowa naprawa też przechodzi przez hub: alarm dla błędu, informacja dla ostrzeżenia.",
+          "capture_grace_minutes": "Przechwycone powiadomienia z tych minut po uruchomieniu Home Assistant czekają do ich końca i są pomijane, jeśli do tego czasu zniknęły (0: brak).",
+          "capture_delay_minutes": "Każde przechwycone powiadomienie czeka tyle czasu i jest wysyłane tylko, jeśli nadal istnieje (0: od razu).",
+          "capture_rules": "Lista reguł, wygrywa pierwsza pasująca: kind (repair lub persistent), domain, id (z * jako symbolem wieloznacznym, np. restart_required_*), następnie action (send, ignore, journal, digest), delay_minutes i topic (wspólny temat: ten sam incydent, wysłany raz)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Nieprawidłowa reguła: sprawdź pola, priorytet, ikonę (mdi:…) i kolor (#rrggbb)."
+      "invalid_sources": "Nieprawidłowa reguła: sprawdź pola, priorytet, ikonę (mdi:…) i kolor (#rrggbb).",
+      "invalid_capture_rules": "Nieprawidłowa reguła przechwytywania: sprawdź kind, action, delay_minutes i topic."
     }
   },
   "entity": {

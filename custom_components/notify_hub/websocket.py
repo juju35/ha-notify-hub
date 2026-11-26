@@ -9,10 +9,14 @@ from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 
+from .capture import CAPTURE_RULES_SCHEMA
 from .const import (
     CONF_AWAY_MODE,
+    CONF_CAPTURE_DELAY,
+    CONF_CAPTURE_GRACE,
     CONF_CAPTURE_PERSISTENT,
     CONF_CAPTURE_REPAIRS,
+    CONF_CAPTURE_RULES,
     CONF_DEDUP_MINUTES,
     CONF_DIGEST_TIMES,
     CONF_ESCALATION_MINUTES,
@@ -57,6 +61,9 @@ OPTION_SCHEMA = vol.Schema(
         vol.Optional(CONF_SOURCES): SOURCES_SCHEMA,
         vol.Optional(CONF_CAPTURE_PERSISTENT): bool,
         vol.Optional(CONF_CAPTURE_REPAIRS): bool,
+        vol.Optional(CONF_CAPTURE_GRACE): vol.All(vol.Coerce(int), vol.Range(min=0, max=120)),
+        vol.Optional(CONF_CAPTURE_DELAY): vol.All(vol.Coerce(int), vol.Range(min=0, max=1440)),
+        vol.Optional(CONF_CAPTURE_RULES): CAPTURE_RULES_SCHEMA,
     }
 )
 

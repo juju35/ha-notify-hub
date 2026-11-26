@@ -140,6 +140,27 @@ async def test_options_flow_sources(hass: HomeAssistant, sent) -> None:
     assert entry.options["sources"] == {"hue": {"icon": "mdi:lightbulb"}}  # empty fields and rules dropped
     assert entry.options["capture_persistent"] is True
     assert entry.options[CONF_PEOPLE]
+    assert "capture_rules" not in entry.options and "capture_grace_minutes" not in entry.options  # defaults kept out
+    # The captures held back (#22): grace period, delay and rules, an invalid rule refused.
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    flow = await hass.config_entries.options.async_configure(flow["flow_id"], {"next_step_id": "sources"})
+    bad = await hass.config_entries.options.async_configure(
+        flow["flow_id"], {"capture_persistent": True, "capture_repairs": True, "capture_rules": [{"action": "shout"}]}
+    )
+    assert bad["errors"] == {"capture_rules": "invalid_capture_rules"}
+    result = await hass.config_entries.options.async_configure(
+        flow["flow_id"],
+        {
+            "capture_persistent": True,
+            "capture_repairs": True,
+            "capture_grace_minutes": 5,
+            "capture_delay_minutes": 2,
+            "capture_rules": [{"domain": "hacs", "id": "restart_required_*", "action": "journal"}],
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert (entry.options["capture_grace_minutes"], entry.options["capture_delay_minutes"]) == (5, 2)
+    assert entry.options["capture_rules"] == [{"domain": "hacs", "id": "restart_required_*", "action": "journal"}]
 
 
 async def test_single_instance(hass: HomeAssistant, sent) -> None:
