@@ -51,16 +51,23 @@
         "data": {
           "sources": "Rules per source",
           "capture_persistent": "Persistent notifications",
-          "capture_repairs": "New repairs"
+          "capture_repairs": "New repairs",
+          "capture_grace_minutes": "Grace period after startup",
+          "capture_delay_minutes": "Delay before sending",
+          "capture_rules": "Capture rules"
         },
         "data_description": {
           "capture_persistent": "The notifications the integrations post in Home Assistant (the sidebar bell) also go through the hub.",
-          "capture_repairs": "Each new repair also goes through the hub: an alert for an error, an info for a warning."
+          "capture_repairs": "Each new repair also goes through the hub: an alert for an error, an info for a warning.",
+          "capture_grace_minutes": "Captured notifications raised during these minutes after Home Assistant started wait until the end of it, and are dropped if they are gone by then (0: none).",
+          "capture_delay_minutes": "Every captured notification waits this long and is sent only if it is still there (0: sent at once).",
+          "capture_rules": "A list of rules, the first one matching wins: kind (repair or persistent), domain, id (with * as wildcard, e.g. restart_required_*), then action (send, ignore, journal, digest), delay_minutes and topic (a shared topic: same incident, sent once)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Invalid rule: check the fields, the priority, the icon (mdi:…) and the color (#rrggbb)."
+      "invalid_sources": "Invalid rule: check the fields, the priority, the icon (mdi:…) and the color (#rrggbb).",
+      "invalid_capture_rules": "Invalid capture rule: check kind, action, delay_minutes and topic."
     }
   },
   "entity": {

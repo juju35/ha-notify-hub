@@ -51,16 +51,23 @@
         "data": {
           "sources": "Règles par source",
           "capture_persistent": "Notifications persistantes",
-          "capture_repairs": "Nouvelles réparations"
+          "capture_repairs": "Nouvelles réparations",
+          "capture_grace_minutes": "Période de grâce après le démarrage",
+          "capture_delay_minutes": "Délai avant envoi",
+          "capture_rules": "Règles de capture"
         },
         "data_description": {
           "capture_persistent": "Les notifications que les intégrations publient dans Home Assistant (la cloche de la barre latérale) passent aussi par le hub.",
-          "capture_repairs": "Chaque nouvelle réparation passe aussi par le hub : une alerte pour une erreur, une info pour un avertissement."
+          "capture_repairs": "Chaque nouvelle réparation passe aussi par le hub : une alerte pour une erreur, une info pour un avertissement.",
+          "capture_grace_minutes": "Les notifications capturées pendant ces minutes après le démarrage de Home Assistant attendent la fin de cette période, et sont abandonnées si elles ont disparu entre-temps (0 : aucune).",
+          "capture_delay_minutes": "Chaque notification capturée attend ce délai et n'est envoyée que si elle est toujours là (0 : envoi immédiat).",
+          "capture_rules": "Une liste de règles, la première qui correspond l'emporte : kind (repair ou persistent), domain, id (avec * comme joker, ex. restart_required_*), puis action (send, ignore, journal, digest), delay_minutes et topic (un sujet commun : même incident, envoyé une fois)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Règle invalide : vérifiez les champs, la priorité, l’icône (mdi:…) et la couleur (#rrggbb)."
+      "invalid_sources": "Règle invalide : vérifiez les champs, la priorité, l’icône (mdi:…) et la couleur (#rrggbb).",
+      "invalid_capture_rules": "Règle de capture invalide : vérifiez kind, action, delay_minutes et topic."
     }
   },
   "entity": {

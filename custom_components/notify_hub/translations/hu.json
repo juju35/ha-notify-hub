@@ -51,16 +51,23 @@
         "data": {
           "sources": "Források szabályai",
           "capture_persistent": "Állandó értesítések",
-          "capture_repairs": "Új javítások"
+          "capture_repairs": "Új javítások",
+          "capture_grace_minutes": "Türelmi idő indítás után",
+          "capture_delay_minutes": "Késleltetés küldés előtt",
+          "capture_rules": "Rögzítési szabályok"
         },
         "data_description": {
           "capture_persistent": "Az integrációk által a Home Assistantben közzétett értesítések (az oldalsáv csengője) is a hubon mennek át.",
-          "capture_repairs": "Minden új javítás is a hubon megy át: riasztás hiba, információ figyelmeztetés esetén."
+          "capture_repairs": "Minden új javítás is a hubon megy át: riasztás hiba, információ figyelmeztetés esetén.",
+          "capture_grace_minutes": "A Home Assistant indítása utáni percekben rögzített értesítések megvárják a végét, és elvetésre kerülnek, ha addig eltűntek (0: nincs).",
+          "capture_delay_minutes": "Minden rögzített értesítés ennyit vár, és csak akkor megy ki, ha még megvan (0: azonnal).",
+          "capture_rules": "Szabályok listája, az első egyező érvényes: kind (repair vagy persistent), domain, id (* helyettesítővel, pl. restart_required_*), majd action (send, ignore, journal, digest), delay_minutes és topic (közös téma: ugyanaz az eset, egyszer küldve)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Érvénytelen szabály: ellenőrizze a mezőket, a prioritást, az ikont (mdi:…) és a színt (#rrggbb)."
+      "invalid_sources": "Érvénytelen szabály: ellenőrizze a mezőket, a prioritást, az ikont (mdi:…) és a színt (#rrggbb).",
+      "invalid_capture_rules": "Érvénytelen rögzítési szabály: ellenőrizze a kind, action, delay_minutes és topic mezőket."
     }
   },
   "entity": {

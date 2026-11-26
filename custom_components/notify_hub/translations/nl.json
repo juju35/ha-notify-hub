@@ -51,16 +51,23 @@
         "data": {
           "sources": "Regels per bron",
           "capture_persistent": "Blijvende meldingen",
-          "capture_repairs": "Nieuwe reparaties"
+          "capture_repairs": "Nieuwe reparaties",
+          "capture_grace_minutes": "Respijtperiode na het opstarten",
+          "capture_delay_minutes": "Vertraging vóór verzenden",
+          "capture_rules": "Opvangregels"
         },
         "data_description": {
           "capture_persistent": "De meldingen die integraties in Home Assistant plaatsen (de bel in de zijbalk) gaan ook via de hub.",
-          "capture_repairs": "Elke nieuwe reparatie gaat ook via de hub: een alarm bij een fout, een info bij een waarschuwing."
+          "capture_repairs": "Elke nieuwe reparatie gaat ook via de hub: een alarm bij een fout, een info bij een waarschuwing.",
+          "capture_grace_minutes": "Opgevangen meldingen uit deze minuten na het opstarten van Home Assistant wachten tot het einde ervan en vervallen als ze dan verdwenen zijn (0: geen).",
+          "capture_delay_minutes": "Elke opgevangen melding wacht zo lang en wordt alleen verzonden als ze er nog is (0: meteen verzonden).",
+          "capture_rules": "Een lijst regels, de eerste die past wint: kind (repair of persistent), domain, id (met * als jokerteken, bv. restart_required_*), dan action (send, ignore, journal, digest), delay_minutes en topic (gedeeld onderwerp: zelfde incident, één keer verzonden)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Ongeldige regel: controleer de velden, de prioriteit, het pictogram (mdi:…) en de kleur (#rrggbb)."
+      "invalid_sources": "Ongeldige regel: controleer de velden, de prioriteit, het pictogram (mdi:…) en de kleur (#rrggbb).",
+      "invalid_capture_rules": "Ongeldige opvangregel: controleer kind, action, delay_minutes en topic."
     }
   },
   "entity": {

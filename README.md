@@ -156,6 +156,31 @@ garden:
 
 The same tab (or step) turns on the **captured notifications**: persistent notifications (the sidebar bell, as infos, filed under the integration their id starts with) and new repairs (an alert for an error, an info for a warning, opening Settings → Repairs). Both are off by default. A persistent notification raised by one of the hub's own channels (`notify.persistent_notification` set as a person's channel, say) is not captured again, so it cannot loop.
 
+#### Holding back the captured notifications
+
+Some captured notifications are only passing: a repair asking for a restart after an update made by hand, resources missing for a moment while the integrations load, then back. Three options of the **Sources** step of the options (*Settings → Devices & services → Notify Hub → Configure*) keep them quiet, without hiding real problems:
+
+- **Grace period after startup** (`capture_grace_minutes`, 0 by default): what is captured during these minutes after Home Assistant started waits until the end of it;
+- **Delay before sending** (`capture_delay_minutes`, 0 by default): every captured notification waits this long;
+- **Capture rules** (`capture_rules`, YAML): the first rule that matches wins.
+
+A held notification is sent only if it is still there when its wait ends: a repair fixed or a notification dismissed meanwhile is dropped. A source whose rule forces the `critical` priority is never held back.
+
+```yaml
+- domain: hacs                   # the integration (optional)
+  id: restart_required_*         # the repair's or the notification's id, * and ? as wildcards (optional)
+  action: journal                # send (default), ignore, journal (kept in the journal only) or digest
+- domain: spook
+  delay_minutes: 10              # its own delay, instead of capture_delay_minutes
+- kind: persistent               # repair or persistent (optional)
+  id: "*login*"
+  topic: auth_failure            # a shared topic: same incident from several sources, sent once
+- domain: acme
+  topic: auth_failure
+```
+
+A shared `topic` correlates notifications of different sources: the next ones on that topic within the duplicate delay (`dedup_minutes`) are kept in the journal as duplicates of the first.
+
 ### Entities
 
 One device, **Notify Hub**, with the `notify.notify_hub` entity and five sensors (named in Home Assistant's language):

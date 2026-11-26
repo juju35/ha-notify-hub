@@ -51,16 +51,23 @@
         "data": {
           "sources": "Regler pr. kilde",
           "capture_persistent": "Vedvarende notifikationer",
-          "capture_repairs": "Nye reparationer"
+          "capture_repairs": "Nye reparationer",
+          "capture_grace_minutes": "Henstandsperiode efter opstart",
+          "capture_delay_minutes": "Forsinkelse før afsendelse",
+          "capture_rules": "Opsamlingsregler"
         },
         "data_description": {
           "capture_persistent": "De notifikationer, integrationer viser i Home Assistant (klokken i sidebjælken), går også gennem hubben.",
-          "capture_repairs": "Hver ny reparation går også gennem hubben: en alarm for en fejl, en info for en advarsel."
+          "capture_repairs": "Hver ny reparation går også gennem hubben: en alarm for en fejl, en info for en advarsel.",
+          "capture_grace_minutes": "Opsamlede notifikationer fra disse minutter efter Home Assistant startede venter til periodens slutning og droppes, hvis de er væk inden da (0: ingen).",
+          "capture_delay_minutes": "Hver opsamlet notifikation venter så længe og sendes kun, hvis den stadig findes (0: straks).",
+          "capture_rules": "En liste over regler, den første der passer vinder: kind (repair eller persistent), domain, id (med * som jokertegn, f.eks. restart_required_*), derefter action (send, ignore, journal, digest), delay_minutes og topic (fælles emne: samme hændelse, sendt én gang)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Ugyldig regel: tjek felterne, prioriteten, ikonet (mdi:…) og farven (#rrggbb)."
+      "invalid_sources": "Ugyldig regel: tjek felterne, prioriteten, ikonet (mdi:…) og farven (#rrggbb).",
+      "invalid_capture_rules": "Ugyldig opsamlingsregel: kontroller kind, action, delay_minutes og topic."
     }
   },
   "entity": {

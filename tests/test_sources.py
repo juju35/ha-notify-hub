@@ -13,8 +13,11 @@ from homeassistant.util import dt as dt_util
 
 from custom_components.notify_hub import sources
 from custom_components.notify_hub.const import (
+    CONF_CAPTURE_DELAY,
+    CONF_CAPTURE_GRACE,
     CONF_CAPTURE_PERSISTENT,
     CONF_CAPTURE_REPAIRS,
+    CONF_CAPTURE_RULES,
     CONF_QUIET_ENABLED,
     CONF_QUIET_END,
     CONF_QUIET_START,
@@ -222,3 +225,103 @@ def test_guess_domain(hass: HomeAssistant) -> None:
     assert sources.guess_domain(hass, "zha") == "zha"
     assert sources.guess_domain(hass, "sensor_x") is None
     assert sources.guess_domain(hass, "unknown") is None
+
+
+# ── Captures held back (#22) ────────────────────────────────────────────────
+
+
+async def _later(hass: HomeAssistant, freezer, minutes: float) -> None:
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    freezer.tick(timedelta(minutes=minutes))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+
+async def test_capture_delay_drops_a_repair_fixed_meanwhile(hass: HomeAssistant, sent, freezer) -> None:
+    people(hass)
+    acme(hass)
+    await setup_hub(hass, **{CONF_CAPTURE_REPAIRS: True, CONF_CAPTURE_DELAY: 5})
+
+    def issue(issue_id: str) -> None:
+        ir.async_create_issue(
+            hass, "acme", issue_id, is_fixable=False, severity=ir.IssueSeverity.ERROR, translation_key=issue_id
+        )
+
+    issue("lovelace_missing")
+    issue("bridge_offline")
+    await hass.async_block_till_done()
+    assert not hub_of(hass).journal  # both held back
+    ir.async_delete_issue(hass, "acme", "lovelace_missing")  # gone on its own
+    await _later(hass, freezer, 6)
+    assert [e["topic"] for e in hub_of(hass).journal] == ["repair:acme:bridge_offline"]
+    # Turned off while one is held back: never sent.
+    issue("late_one")
+    await hass.async_block_till_done()
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_CAPTURE_REPAIRS: False})
+    await hass.async_block_till_done()
+    await _later(hass, freezer, 6)
+    assert len(hub_of(hass).journal) == 1
+
+
+async def test_capture_grace_period_after_startup(hass: HomeAssistant, sent, freezer) -> None:
+    people(hass)
+    acme(hass)
+    entry = await setup_hub(hass, **{CONF_CAPTURE_PERSISTENT: True, CONF_CAPTURE_GRACE: 3})
+    capture = hub_of(hass).capture
+    capture._started = dt_util.utcnow()  # Home Assistant just started
+    persistent_notification.async_create(hass, "Resources missing", None, "acme_resources")
+    persistent_notification.async_create(hass, "Still there", None, "acme_still")
+    await hass.async_block_till_done()
+    assert not hub_of(hass).journal
+    persistent_notification.async_dismiss(hass, "acme_resources")
+    await _later(hass, freezer, 4)
+    assert [e["topic"] for e in hub_of(hass).journal] == ["persistent:acme_still"]
+    # Once the grace period is over, sent at once.
+    persistent_notification.async_create(hass, "Later", None, "acme_later")
+    await hass.async_block_till_done()
+    assert hub_of(hass).journal[0]["topic"] == "persistent:acme_later"
+    assert entry.options[CONF_CAPTURE_GRACE] == 3
+
+
+async def test_capture_rules_by_domain_and_id(hass: HomeAssistant, sent) -> None:
+    people(hass)
+    acme(hass)
+    rules = [
+        {"domain": "acme", "id": "restart_required_*", "action": "journal"},
+        {"domain": "acme", "id": "noise", "action": "ignore"},
+        {"domain": "acme", "id": "weekly_*", "action": "digest"},
+        {"kind": "persistent", "id": "*-login", "topic": "auth_failure"},
+        {"kind": "persistent", "domain": "acme", "topic": "auth_failure"},
+    ]
+    await setup_hub(hass, **{CONF_CAPTURE_REPAIRS: True, CONF_CAPTURE_PERSISTENT: True, CONF_CAPTURE_RULES: rules})
+    for issue_id in ("restart_required_acme", "noise", "weekly_report"):
+        ir.async_create_issue(
+            hass, "acme", issue_id, is_fixable=False, severity=ir.IssueSeverity.ERROR, translation_key=issue_id
+        )
+    await hass.async_block_till_done()
+    journal = hub_of(hass).journal
+    assert [(e["topic"], e["status"]) for e in journal] == [
+        ("repair:acme:weekly_report", "grouped"),
+        ("repair:acme:restart_required_acme", "muted"),
+    ]
+    # Two sources, one incident: the second is a duplicate of the first.
+    persistent_notification.async_create(hass, "Login attempt failed", None, "http-login")
+    await hass.async_block_till_done()
+    persistent_notification.async_create(hass, "Login attempt failed", None, "acme_login_failed")
+    await hass.async_block_till_done()
+    assert [(e["topic"], e["status"]) for e in hub_of(hass).journal[:2]] == [
+        ("auth_failure", "duplicate"),
+        ("auth_failure", "delivered"),
+    ]
+
+
+def test_match_rule() -> None:
+    from custom_components.notify_hub.capture import CAPTURE_RULES_SCHEMA, match_rule
+
+    rules = CAPTURE_RULES_SCHEMA([{"domain": " HACS ", "id": "restart_required_*", "action": "journal"}, {}])
+    assert rules == [{"domain": "hacs", "id": "restart_required_*", "action": "journal"}]
+    assert match_rule(rules, "repair", "hacs", "restart_required_ui")["action"] == "journal"
+    assert match_rule(rules, "repair", "hacs", "other") == {}
+    assert match_rule(rules, "repair", "spook", "restart_required_x") == {}

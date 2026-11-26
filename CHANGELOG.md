@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0 - 2026-11-26
+
+### Features
+- **Captured notifications held back** (#22), in the Sources step of the options, off by default: a **grace period after startup** (`capture_grace_minutes`: what is captured during these minutes after Home Assistant started waits until the end of it), a **delay before sending** (`capture_delay_minutes`) and **capture rules** (`capture_rules`, YAML) by kind (repair / persistent), integration and id with wildcards (`restart_required_*`): `action` send, ignore, journal (kept in the journal only) or digest, a `delay_minutes` of their own, and a shared `topic` that makes notifications of several sources about the same incident duplicates of the first. A held notification is sent only if it is still there when its wait ends (a repair fixed, a notification dismissed meanwhile is dropped); a source forced to the critical priority is never held back.
+
 ## 0.9.0 - 2026-11-24
 
 ### Features

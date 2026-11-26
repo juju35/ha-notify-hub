@@ -51,16 +51,23 @@
         "data": {
           "sources": "Pravidla zdrojů",
           "capture_persistent": "Trvalá oznámení",
-          "capture_repairs": "Nové opravy"
+          "capture_repairs": "Nové opravy",
+          "capture_grace_minutes": "Ochranná lhůta po spuštění",
+          "capture_delay_minutes": "Zpoždění před odesláním",
+          "capture_rules": "Pravidla zachytávání"
         },
         "data_description": {
           "capture_persistent": "Oznámení, která integrace zveřejňují v Home Assistant (zvonek postranního panelu), jdou také přes hub.",
-          "capture_repairs": "Každá nová oprava jde také přes hub: poplach při chybě, info při varování."
+          "capture_repairs": "Každá nová oprava jde také přes hub: poplach při chybě, info při varování.",
+          "capture_grace_minutes": "Zachycená oznámení z těchto minut po spuštění Home Assistant čekají na její konec a zahodí se, pokud mezitím zmizela (0: žádná).",
+          "capture_delay_minutes": "Každé zachycené oznámení čeká takto dlouho a odešle se, jen pokud stále existuje (0: ihned).",
+          "capture_rules": "Seznam pravidel, platí první shodné: kind (repair nebo persistent), domain, id (s * jako zástupným znakem, např. restart_required_*), poté action (send, ignore, journal, digest), delay_minutes a topic (společné téma: stejný incident, odesláno jednou)."
         }
       }
     },
     "error": {
-      "invalid_sources": "Neplatné pravidlo: zkontrolujte pole, prioritu, ikonu (mdi:…) a barvu (#rrggbb)."
+      "invalid_sources": "Neplatné pravidlo: zkontrolujte pole, prioritu, ikonu (mdi:…) a barvu (#rrggbb).",
+      "invalid_capture_rules": "Neplatné pravidlo zachytávání: zkontrolujte kind, action, delay_minutes a topic."
     }
   },
   "entity": {

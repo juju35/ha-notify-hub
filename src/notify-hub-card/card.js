@@ -10,7 +10,7 @@
 import { pickerDefine } from "./card-picker.js";
 import { NH_CARD_I18N } from "./i18n/nh-card-i18n.js";
 
-export var NOTIFY_HUB_CARD_VERSION = '0.9.0';
+export var NOTIFY_HUB_CARD_VERSION = '0.10.0';
 
 
 export var NH_DEFAULTS = { rows: 4, illustration_theme: 'auto' };

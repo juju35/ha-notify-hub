@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "notify_hub"
 TITLE: Final = "Notify Hub"
-VERSION: Final = "0.9.0"
+VERSION: Final = "0.10.0"
 
 # Priorities, from the most to the least urgent.
 PRIORITY_CRITICAL: Final = "critical"
@@ -48,6 +48,12 @@ CONF_SOURCES: Final = "sources"
 # The notifications other integrations raise in Home Assistant, sent through the hub too.
 CONF_CAPTURE_PERSISTENT: Final = "capture_persistent"  # persistent notifications (the bell of the sidebar)
 CONF_CAPTURE_REPAIRS: Final = "capture_repairs"  # new repairs (Settings → Repairs)
+# Captured notifications held back: minutes after Home Assistant started during which they wait (a repair raised
+# while the integrations load, then gone), a delay for every captured one (sent only if still there), and the rules
+# by integration and id (capture.py).
+CONF_CAPTURE_GRACE: Final = "capture_grace_minutes"
+CONF_CAPTURE_DELAY: Final = "capture_delay_minutes"
+CONF_CAPTURE_RULES: Final = "capture_rules"
 # The panel's top bar: "off" (shown) or "all" (hidden, the tabs stay with the menu and the buttons).
 CONF_HIDE_HEADER: Final = "hide_header"
 HIDE_HEADER_MODES: Final = ("off", "all")
