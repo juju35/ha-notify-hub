@@ -2,6 +2,7 @@
   "domain": "notify_hub",
   "name": "Notify Hub",
   "after_dependencies": ["frontend", "http", "lovelace", "mobile_app", "notify", "person", "websocket_api"],
+  "categories": ["messaging_notifications.push_notifications"],
   "codeowners": ["@juju35"],
   "config_flow": true,
   "documentation": "https://github.com/juju35/ha-notify-hub",
