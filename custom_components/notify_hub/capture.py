@@ -131,6 +131,11 @@ class Capture:
                 )
             elif not on and key in self._unsub:
                 self._unsub.pop(key)()
+            if not on:
+                # Turned off: what it still held back is never sent.
+                kind = "persistent" if key == CONF_CAPTURE_PERSISTENT else "repair"
+                for held in [h for h in self._held if h[0] == kind]:
+                    self._cancel(held)
 
     @callback
     def async_stop(self) -> None:

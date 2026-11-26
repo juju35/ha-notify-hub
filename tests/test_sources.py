@@ -255,6 +255,14 @@ async def test_capture_delay_drops_a_repair_fixed_meanwhile(hass: HomeAssistant,
     ir.async_delete_issue(hass, "acme", "lovelace_missing")  # gone on its own
     await _later(hass, freezer, 6)
     assert [e["topic"] for e in hub_of(hass).journal] == ["repair:acme:bridge_offline"]
+    # Turned off while one is held back: never sent.
+    issue("late_one")
+    await hass.async_block_till_done()
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_CAPTURE_REPAIRS: False})
+    await hass.async_block_till_done()
+    await _later(hass, freezer, 6)
+    assert len(hub_of(hass).journal) == 1
 
 
 async def test_capture_grace_period_after_startup(hass: HomeAssistant, sent, freezer) -> None:
