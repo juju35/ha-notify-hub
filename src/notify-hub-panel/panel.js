@@ -616,14 +616,14 @@ export class NotifyHubPanel extends HTMLElement {
 
   static styles() {
     return `
-      :host { display: block; --ok: var(--success-color, #43a047); --warn: var(--warning-color, #f59e0b); --bad: var(--error-color, #db4437);
+      :host { display: block; --ok: var(--success-color, #43a047); --warn: var(--warning-color, #ffa600); --bad: var(--error-color, #db4437);
               --idle: var(--secondary-text-color, #727272); --info: #2563eb; --accent: #2563eb; }
       .page { min-height: 100vh; background: var(--primary-background-color); color: var(--primary-text-color); font-family: var(--paper-font-body1_-_font-family, inherit); }
       .page.tone-ok { --c: var(--accent); } .page.tone-bad { --c: var(--bad); } .page.tone-idle { --c: var(--idle); }
       .top { position: relative; height: 90px; overflow: hidden; background: linear-gradient(#dbeafe, #f0f6ff); }
       .night .top { background: linear-gradient(#0f1b33, #1c2a48); }
-      .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #93c5fd; } .night .ground { background: #36507e; }
-      .scene { position: absolute; right: 340px; bottom: 6px; height: 84px; width: auto; max-width: 40%; }
+      .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #93c5fd; } .night .ground { background: #36507e; }
+      .scene { position: absolute; right: 340px; bottom: 10px; height: 84px; width: auto; max-width: 40%; }
       @media (max-width: 900px) { .scene { right: 120px; opacity: .35; } }
       .letter rect { fill: #fff; stroke: #93c5fd; stroke-width: 2; } .letter path { fill: none; stroke: #93c5fd; stroke-width: 2; }
       .night .letter rect { fill: #e6ebf3; stroke: #5b7bb3; } .night .letter path { stroke: #5b7bb3; }
@@ -637,7 +637,7 @@ export class NotifyHubPanel extends HTMLElement {
       @keyframes nhp-wave { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
       @keyframes nhp-ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
       @media (prefers-reduced-motion: reduce) { .letter, .wave, .bell.ring { animation: none; } }
-      .bar { position: absolute; left: 24px; right: 24px; top: 0; bottom: 6px; display: flex; align-items: center; gap: 12px; }
+      .bar { position: absolute; left: 24px; right: 24px; top: 0; bottom: 10px; display: flex; align-items: center; gap: 12px; }
       .head { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; }
       .head .htxt { min-width: 84px; }
       @media (max-width: 600px) { .pill .pl { display: none; } }
@@ -669,7 +669,7 @@ export class NotifyHubPanel extends HTMLElement {
       h2 { margin: 4px 0 0; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--secondary-text-color); }
       .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
       @media (max-width: 700px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-      .tile, .card { position: relative; background: var(--card-background-color, #fff); border-radius: 14px; box-shadow: var(--ha-card-box-shadow, 0 1px 3px rgba(0,0,0,.08)); }
+      .tile, .card { position: relative; background: var(--card-background-color, #fff); border-radius: 10px; box-shadow: var(--ha-card-box-shadow, 0 1px 3px rgba(0,0,0,.08)); }
       .tile { padding: 14px; display: flex; flex-direction: column; gap: 4px; }
       .tile .n { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; } .tile .k { font-size: 13px; color: var(--secondary-text-color); }
       .tile.t-bad .n { color: var(--bad); }
