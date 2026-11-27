@@ -371,7 +371,9 @@ export class NotifyHubPanel extends HTMLElement {
     if (!this._fold) this._attachFold();
   }
 
-  // The header's scene: a mailbox on its post, letters flying in along a dotted path. On an alert to acknowledge,
+  // jscpd:ignore-start
+  // The header's scene, the card's own (each bundle keeps its copy: both load in one page, a shared top-level name
+  // would clash). A mailbox on its post, letters flying in along a dotted path. On an alert to acknowledge,
   // its flag goes up and a bell rings beside it.
   static scene(alarm) {
     var letter = (x, y, r, k) =>
@@ -387,6 +389,7 @@ export class NotifyHubPanel extends HTMLElement {
       <path class="tuft" d="M150 80q4-7 8 0M196 80q3-6 6 0"/>
     </svg>`;
   }
+  // jscpd:ignore-end
 
   _journal(d, t) {
     var c = d.counts || {};
