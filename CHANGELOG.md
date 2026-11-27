@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0 - 2026-11-27
+
+### Features
+- Illustrated header (card and panel): a mailbox on its post with letters flying in along a dotted path. On an alert to acknowledge, its flag goes up and a bell rings beside it.
+- Card: the status pill sits right after the title, like on the other ha-* cards; a long subtitle ends before the scene.
+
 ## 0.10.1 - 2026-11-27
 
 ### Fixes

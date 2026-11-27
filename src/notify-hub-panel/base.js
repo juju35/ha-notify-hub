@@ -6,7 +6,7 @@
  * under it, the current tab in the address.
  * https://github.com/juju35/ha-notify-hub
  */
-export var NOTIFY_HUB_PANEL_VERSION = '0.10.1';
+export var NOTIFY_HUB_PANEL_VERSION = '0.11.0';
 
 
 export var NHP_TABS = ['journal', 'routing', 'rules', 'sources', 'settings'];

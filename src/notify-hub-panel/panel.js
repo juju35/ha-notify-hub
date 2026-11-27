@@ -371,12 +371,20 @@ export class NotifyHubPanel extends HTMLElement {
     if (!this._fold) this._attachFold();
   }
 
+  // The header's scene: a mailbox on its post, letters flying in along a dotted path. On an alert to acknowledge,
+  // its flag goes up and a bell rings beside it.
   static scene(alarm) {
-    return `<svg class="scene" viewBox="0 0 320 110" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
-      <g class="letter l1"><rect x="70" y="48" width="44" height="28" rx="4"/><path d="M70 50 l22 14 l22 -14"/></g>
-      <g class="letter l2"><rect x="250" y="58" width="36" height="24" rx="4"/><path d="M250 60 l18 12 l18 -12"/></g>
-      <g class="bell${alarm ? ' ring' : ''}"><path class="bbody" d="M150 98 v-34 a26 26 0 0 1 52 0 v34 z"/><rect class="brim" x="144" y="96" width="64" height="7" rx="3"/><circle class="bclap" cx="176" cy="106" r="5"/></g>
-      <path class="wave w1" d="M214 50 q10 10 0 20"/><path class="wave w2" d="M224 42 q18 18 0 36"/>
+    var letter = (x, y, r, k) =>
+      `<g transform="rotate(${r} ${x + 11} ${y + 7})"><g class="letter l${k}"><rect x="${x}" y="${y}" width="22" height="15" rx="2"/><path d="M${x} ${y + 2}l11 7 11-7"/></g></g>`;
+    return `<svg class="scene" viewBox="110 0 190 80" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+      <path class="trail" d="M60 46 q60 -40 150 -6"/>
+      ${letter(128, 16, -4, 1)}${letter(172, 22, 6, 2)}
+      <rect class="post" x="232" y="44" width="6" height="36"/>
+      <path class="box" d="M212 44v-12a14 14 0 0 1 14-14h20a14 14 0 0 1 14 14v12z"/>
+      <path class="door" d="M212 44v-12a14 14 0 0 1 28 0v12"/>
+      <rect class="pole" x="258" y="${alarm ? 6 : 26}" width="3" height="${alarm ? 34 : 14}"/><rect class="cloth${alarm ? ' up' : ''}" x="261" y="${alarm ? 6 : 26}" width="12" height="8"/>
+      ${alarm ? '<g class="bell ring"><path class="bbody" d="M272 66v-10a8 8 0 0 1 16 0v10z"/><rect class="brim" x="270" y="65" width="20" height="3" rx="1.5"/></g><path class="wave" d="M293 50q4 5 0 10"/>' : ''}
+      <path class="tuft" d="M150 80q4-7 8 0M196 80q3-6 6 0"/>
     </svg>`;
   }
 
@@ -623,14 +631,18 @@ export class NotifyHubPanel extends HTMLElement {
       .top { position: relative; height: 90px; overflow: hidden; background: linear-gradient(#dbeafe, #f0f6ff); }
       .night .top { background: linear-gradient(#0f1b33, #1c2a48); }
       .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #93c5fd; } .night .ground { background: #36507e; }
-      .scene { position: absolute; right: 340px; bottom: 10px; height: 84px; width: auto; max-width: 40%; }
+      .scene { position: absolute; right: 340px; bottom: 10px; height: 80px; width: 190px; max-width: 40%; }
       @media (max-width: 900px) { .scene { right: 120px; opacity: .35; } }
-      .letter rect { fill: #fff; stroke: #93c5fd; stroke-width: 2; } .letter path { fill: none; stroke: #93c5fd; stroke-width: 2; }
+      .trail { fill: none; stroke: #93c5fd; stroke-width: 1.5; stroke-dasharray: 3 5; } .night .trail { stroke: #5b7bb3; }
+      .letter rect { fill: #fff; stroke: #93c5fd; stroke-width: 1.8; } .letter path { fill: none; stroke: #93c5fd; stroke-width: 1.8; }
       .night .letter rect { fill: #e6ebf3; stroke: #5b7bb3; } .night .letter path { stroke: #5b7bb3; }
-      .bbody { fill: #93c5fd; } .brim, .bclap { fill: #60a5fa; } .night .bbody { fill: #5b7bb3; } .night .brim, .night .bclap { fill: #8fb3ee; }
-      .tone-bad .bbody { fill: #fca5a5; } .tone-bad .brim, .tone-bad .bclap { fill: #ef4444; }
-      .wave { fill: none; stroke: #3b82f6; stroke-width: 3; stroke-linecap: round; animation: nhp-wave 1.8s ease-in-out infinite; } .w2 { animation-delay: .3s; }
-      .tone-bad .wave { stroke: #ef4444; } .tone-idle .wave { opacity: .25; animation: none; }
+      .post { fill: #a8743f; } .night .post { fill: #7a5534; }
+      .box { fill: #3b82f6; } .door { fill: #2563eb; } .night .box { fill: #2f5fb8; } .night .door { fill: #264f9c; }
+      .pole { fill: #64748b; } .cloth { fill: #94a3b8; } .night .pole { fill: #94a3b8; } .night .cloth { fill: #64748b; }
+      .cloth.up { fill: #ef4444; }
+      .bbody { fill: #fca5a5; } .brim { fill: #ef4444; }
+      .wave { fill: none; stroke: #ef4444; stroke-width: 2; stroke-linecap: round; animation: nhp-wave 1.8s ease-in-out infinite; }
+      .tuft { fill: none; stroke: #60a5fa; stroke-width: 2; } .night .tuft { stroke: #3b6aa8; }
       .letter { animation: nhp-fly 6s ease-in-out infinite; } .l2 { animation-delay: -3s; }
       .bell { transform-box: fill-box; transform-origin: 50% 0; } .bell.ring { animation: nhp-ring .9s ease-in-out infinite; }
       @keyframes nhp-fly { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, -5px); } }
