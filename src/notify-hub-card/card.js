@@ -10,7 +10,7 @@
 import { pickerDefine } from "./card-picker.js";
 import { NH_CARD_I18N } from "./i18n/nh-card-i18n.js";
 
-export var NOTIFY_HUB_CARD_VERSION = '0.10.0';
+export var NOTIFY_HUB_CARD_VERSION = '0.10.1';
 
 
 export var NH_DEFAULTS = { rows: 4, illustration_theme: 'auto' };
@@ -273,15 +273,15 @@ export class NotifyHubCard extends HTMLElement {
 
   static styles() {
     return `
-      :host { --nh-ok: var(--success-color, #43a047); --nh-warn: var(--warning-color, #f59e0b); --nh-bad: var(--error-color, #db4437);
+      :host { --nh-ok: var(--success-color, #43a047); --nh-warn: var(--warning-color, #ffa600); --nh-bad: var(--error-color, #db4437);
               --nh-idle: var(--secondary-text-color, #727272); --nh-info: #2563eb; --nh-accent: #2563eb; }
       ha-card { overflow: hidden; }
       ha-card.tone-ok { --c: var(--nh-accent); } ha-card.tone-bad { --c: var(--nh-bad); } ha-card.tone-idle { --c: var(--nh-idle); }
       .banner { position: relative; height: 90px; overflow: hidden; background: linear-gradient(#dbeafe, #f0f6ff); }
       .night .banner { background: linear-gradient(#0f1b33, #1c2a48); }
-      .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #93c5fd; }
+      .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #93c5fd; }
       .night .ground { background: #36507e; }
-      .scene { position: absolute; right: 8px; bottom: 6px; height: 70px; width: auto; max-width: 46%; }
+      .scene { position: absolute; right: 8px; bottom: 10px; height: 70px; width: auto; max-width: 46%; }
       .letter rect { fill: #fff; stroke: #93c5fd; stroke-width: 2; } .letter path { fill: none; stroke: #93c5fd; stroke-width: 2; }
       .night .letter rect { fill: #e6ebf3; stroke: #5b7bb3; } .night .letter path { stroke: #5b7bb3; }
       .bbody { fill: #93c5fd; } .brim, .bclap { fill: #60a5fa; }
@@ -310,7 +310,7 @@ export class NotifyHubCard extends HTMLElement {
       .night .pill { color: color-mix(in srgb, var(--c) 45%, #fff); background: color-mix(in srgb, var(--c) 25%, #1c2a48); }
       .body { container-type: inline-size; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
       .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-      .tile { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px; border-radius: 12px;
+      .tile { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px; border-radius: 10px;
               background: var(--secondary-background-color, rgba(127,127,127,.08)); }
       .tile .n { font-size: 20px; font-weight: 700; color: var(--primary-text-color); font-variant-numeric: tabular-nums; }
       .tile .k { font-size: 12px; line-height: 1.2; color: var(--secondary-text-color); }
