@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "notify_hub"
 TITLE: Final = "Notify Hub"
-VERSION: Final = "0.10.1"
+VERSION: Final = "0.11.0"
 
 # Priorities, from the most to the least urgent.
 PRIORITY_CRITICAL: Final = "critical"
