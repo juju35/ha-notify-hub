@@ -1,4 +1,4 @@
-""""My notifications": each person turns off sources and priorities for themselves, never the critical ones."""
+""" "My notifications": each person turns off sources and priorities for themselves, never the critical ones."""
 
 from __future__ import annotations
 
@@ -49,7 +49,8 @@ async def test_everyone_turned_it_off(hass: HomeAssistant, sent) -> None:
 
 async def test_digest_per_person(hass: HomeAssistant, sent) -> None:
     both_home(hass)
-    hub_entry = await setup_hub(hass, **{CONF_SUBSCRIPTIONS: {"person.ben": {"sources": ["weather"], "priorities": []}}})
+    off = {"sources": ["weather"], "priorities": []}
+    hub_entry = await setup_hub(hass, **{CONF_SUBSCRIPTIONS: {"person.ben": off}})
     await send(hass, message="Parcel", priority="digest", source="Parcel")
     await send(hass, message="Rain", priority="digest", source="Weather")
     assert await hub_entry.runtime_data.async_send_digest() == 2
@@ -102,3 +103,18 @@ async def test_mine_without_a_person(hass: HomeAssistant, hass_ws_client, sent) 
     assert mine["success"] and mine["result"]["person"] is None
     refused = await _ws(client, type=f"{DOMAIN}/mine/save", sources=[], priorities=[])
     assert refused["error"]["code"] == "no_person"
+
+
+async def test_digest_kept_for_whom_it_failed(hass: HomeAssistant, sent) -> None:
+    """A line only wanted by someone who could not be reached waits for the next digest."""
+    both_home(hass)
+    hub_entry = await setup_hub(
+        hass,
+        people={"person.anne": ["notify.missing"], "person.ben": [BEN]},
+        **{CONF_SUBSCRIPTIONS: {"person.ben": {"sources": ["weather"], "priorities": []}}},
+    )
+    await send(hass, message="Parcel", priority="digest", source="Parcel")
+    await send(hass, message="Rain", priority="digest", source="Weather")
+    assert await hub_entry.runtime_data.async_send_digest() == 1
+    journal = {e["message"]: e for e in hub_entry.runtime_data.journal}
+    assert journal["Parcel"]["status"] == "delivered" and journal["Rain"]["status"] == "grouped"

@@ -602,18 +602,18 @@ class NotifyHub:
             return 0
         # Each person gets the digest of what they still want (their own choices); nothing when that is nothing.
         reached: dict[str, list[str]] = {}
-        attempted = False
+        wanted: set[str] = set()
         for person in targets:
             mine = [e for e in waiting if self.wants(person, e)]
             if not mine:
                 continue
-            attempted = True
+            wanted.update(e["id"] for e in mine)
             digest = self._digest(mine)
             await self._deliver(digest, [person], chosen=True)
             if digest["status"] == STATUS_DELIVERED:
                 for entry in mine:
                     reached.setdefault(entry["id"], []).append(person["name"])
-        if attempted and not reached:
+        if wanted and not reached:
             # Nobody reachable (no channel, or every channel failed): the notifications stay queued for the next
             # digest instead of being lost as "nobody".
             _LOGGER.warning(
@@ -622,10 +622,12 @@ class NotifyHub:
             return 0
         now = dt_util.utcnow().isoformat()
         for entry in waiting:
-            who = reached.get(entry["id"])
-            entry["status"] = STATUS_DELIVERED if who else STATUS_UNSUBSCRIBED
-            entry["people"] = sorted(who or [])
-            entry["digest"] = now
+            if entry["id"] in reached:
+                entry.update(status=STATUS_DELIVERED, people=sorted(reached[entry["id"]]), digest=now)
+            elif entry["id"] not in wanted:
+                # Everyone turned it off.
+                entry.update(status=STATUS_UNSUBSCRIBED, people=[], digest=now)
+            # Wanted, but nobody who wants it could be reached: it waits for the next digest.
         self._changed()
         return sum(1 for e in waiting if e["id"] in reached)
 

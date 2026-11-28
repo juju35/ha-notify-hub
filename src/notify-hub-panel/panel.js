@@ -241,6 +241,8 @@ export class NotifyHubPanel extends HTMLElement {
       if (el.checked) off.delete(el.dataset.value);
       else off.add(el.dataset.value);
       var choice = { sources: mine.sources || [], priorities: mine.priorities || [], [kind]: [...off] };
+      // Kept at once: a second box changed before the reload builds on this one instead of undoing it.
+      if (this._mineData) this._mineData.subscription = choice;
       this._ws({ type: 'notify_hub/mine/save', ...choice }, this._t().saved);
       return;
     }
