@@ -15,6 +15,9 @@ A notification whose topic (else title and message) was handled less than `dedup
 Each notification is filed under its source (an integration, found by itself, see sources.py), whose rules — forced
 priority, people, duplicate delay, quiet hours ignored, muted (its critical ones still sent) — apply before the above;
 its icon and color go to the phones (Android) and to the panel and the card.
+Last, each person's own choices (`subscriptions`, set by them in the panel's "My notifications" tab): the sources and
+priorities they turned off are not sent to them — never a critical one. A notification everyone it was meant for
+turned off is "unsubscribed"; a digest only lists, for each person, the notifications they still want.
 Everything is kept in a journal (.storage), newest first, for the panel, the card and the sensors.
 """
 
@@ -52,6 +55,7 @@ from .const import (
     CONF_RETENTION_DAYS,
     CONF_SMS_SERVICE,
     CONF_SOURCES,
+    CONF_SUBSCRIPTIONS,
     DEFAULT_DEDUP_MINUTES,
     DEFAULT_DIGEST_TIMES,
     DEFAULT_ESCALATION_MINUTES,
@@ -76,6 +80,7 @@ from .const import (
     STATUS_MUTED,
     STATUS_NOBODY,
     STATUS_PENDING,
+    STATUS_UNSUBSCRIBED,
     STORAGE_KEY,
     STORAGE_VERSION,
     TICK,
@@ -204,9 +209,37 @@ class NotifyHub:
                     "excluded": state.entity_id in excluded,
                     "presence": sensor,
                     "picture": state.attributes.get("entity_picture"),
+                    "user_id": state.attributes.get("user_id"),
+                    "subscription": self.subscription(state.entity_id),
                 }
             )
         return out
+
+    def subscription(self, person: str) -> dict[str, list[str]]:
+        """What the person turned off for themselves: source keys and priorities (both empty: everything)."""
+        raw = (self.options.get(CONF_SUBSCRIPTIONS) or {}).get(person)
+        raw = raw if isinstance(raw, dict) else {}
+        return {
+            "sources": [str(k) for k in raw.get("sources") or []],
+            "priorities": [str(p) for p in raw.get("priorities") or [] if p != PRIORITY_CRITICAL],
+        }
+
+    def person_of_user(self, user_id: str | None) -> dict[str, Any] | None:
+        """The person linked to a Home Assistant user (the person's `user_id`), None when there is none."""
+        if not user_id:
+            return None
+        return next((p for p in self.people() if p["user_id"] == user_id), None)
+
+    def wants(self, person: dict[str, Any], entry: dict[str, Any]) -> bool:
+        """Whether the person still wants this notification: a critical one always; else not when they turned off
+        its priority or its source."""
+        if entry.get("priority") == PRIORITY_CRITICAL:
+            return True
+        mine = person.get("subscription") or self.subscription(person["entity_id"])
+        if entry.get("priority") in mine["priorities"]:
+            return False
+        key = self.key_of(entry)
+        return not (key and key in mine["sources"])
 
     def _at_home(self, person_state: str, sensor: str | None) -> bool:
         """At home: the presence entity's state when set and known (on, home), else the person's state."""
@@ -400,10 +433,18 @@ class NotifyHub:
             entry["stage"] = 0
             entry["next"] = (dt_util.utcnow() + timedelta(minutes=self.escalation[0])).isoformat()
 
-    async def _deliver(self, entry: dict[str, Any], targets: list[dict[str, Any]], *, critical: bool = False) -> None:
-        """Send to every channel of the targets; the status says whether anyone got it."""
+    async def _deliver(
+        self, entry: dict[str, Any], targets: list[dict[str, Any]], *, critical: bool = False, chosen: bool = False
+    ) -> None:
+        """Send to every channel of the targets who still want it (`chosen`: already sorted out, a digest); the status
+        says whether anyone got it."""
         if not targets:
             entry["status"] = STATUS_NOBODY
+            return
+        if not chosen:
+            targets = [p for p in targets if self.wants(p, entry)]
+        if not targets:
+            entry["status"] = STATUS_UNSUBSCRIBED
             return
         reached: list[str] = []
         for person in targets:
@@ -553,33 +594,55 @@ class NotifyHub:
         waiting = [e for e in reversed(self.journal) if e["status"] == STATUS_GROUPED]
         if not waiting:
             return 0
-        lines = [f"• {e['title']} — {e['message']}" if e["title"] else f"• {e['message']}" for e in waiting]
-        more = len(lines) - DIGEST_LINES
-        message = "\n".join(lines[:DIGEST_LINES]) + (f"\n{text(self.hass, 'more', n=more)}" if more > 0 else "")
-        digest = {
-            "id": uuid.uuid4().hex[:12],
-            "title": text(self.hass, "digest", n=len(waiting)),
-            "message": message,
-            "priority": PRIORITY_DIGEST,
-            "source": "",
-            "people": [],
-            "data": {},
-        }
         targets = self._targets(None, present_only=True) or self._targets(None, present_only=False)
-        await self._deliver(digest, targets)
-        if digest["status"] != STATUS_DELIVERED:
+        if not targets:
+            _LOGGER.warning(
+                "Notify Hub: nobody reachable for the digest, %s notifications kept for the next one", len(waiting)
+            )
+            return 0
+        # Each person gets the digest of what they still want (their own choices); nothing when that is nothing.
+        reached: dict[str, list[str]] = {}
+        attempted = False
+        for person in targets:
+            mine = [e for e in waiting if self.wants(person, e)]
+            if not mine:
+                continue
+            attempted = True
+            digest = self._digest(mine)
+            await self._deliver(digest, [person], chosen=True)
+            if digest["status"] == STATUS_DELIVERED:
+                for entry in mine:
+                    reached.setdefault(entry["id"], []).append(person["name"])
+        if attempted and not reached:
             # Nobody reachable (no channel, or every channel failed): the notifications stay queued for the next
             # digest instead of being lost as "nobody".
             _LOGGER.warning(
                 "Notify Hub: nobody reachable for the digest, %s notifications kept for the next one", len(waiting)
             )
             return 0
+        now = dt_util.utcnow().isoformat()
         for entry in waiting:
-            entry["status"] = STATUS_DELIVERED
-            entry["people"] = digest["people"]
-            entry["digest"] = dt_util.utcnow().isoformat()
+            who = reached.get(entry["id"])
+            entry["status"] = STATUS_DELIVERED if who else STATUS_UNSUBSCRIBED
+            entry["people"] = sorted(who or [])
+            entry["digest"] = now
         self._changed()
-        return len(waiting)
+        return sum(1 for e in waiting if e["id"] in reached)
+
+    def _digest(self, entries: list[dict[str, Any]]) -> dict[str, Any]:
+        """One digest message listing these notifications (the first DIGEST_LINES, the rest counted)."""
+        lines = [f"• {e['title']} — {e['message']}" if e["title"] else f"• {e['message']}" for e in entries]
+        more = len(lines) - DIGEST_LINES
+        message = "\n".join(lines[:DIGEST_LINES]) + (f"\n{text(self.hass, 'more', n=more)}" if more > 0 else "")
+        return {
+            "id": uuid.uuid4().hex[:12],
+            "title": text(self.hass, "digest", n=len(entries)),
+            "message": message,
+            "priority": PRIORITY_DIGEST,
+            "source": "",
+            "people": [],
+            "data": {},
+        }
 
     async def _escalate(self, now: datetime) -> bool:
         changed = False

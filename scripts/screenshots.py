@@ -170,9 +170,25 @@ PANEL_STATE = {
     ],
 }
 
+# "My notifications" of the user linked to Sam: infos and one source turned off.
+MINE_STATE = {
+    "person": {"entity_id": "person.sam", "name": "Sam", "picture": None, "excluded": False},
+    "sources": [
+        {
+            "key": s["key"],
+            "name": s["name"],
+            "domain": s.get("domain"),
+            **{k: s["rule"].get(k) for k in ("icon", "color")},
+        }
+        for s in SOURCES
+    ],
+    "priorities": ["alert", "info", "digest"],
+    "subscription": {"sources": [SOURCES[-1]["key"]], "priorities": ["info"]},
+}
+
 # Card shots: (file stem, journal) — the calm card and the one waiting for an acknowledgement.
 CARD_SHOTS = [("card", RECENT), ("card-alert", ALARM + RECENT[:3])]
-PANEL_SHOTS = ["journal", "routing", "rules", "sources", "settings"]
+PANEL_SHOTS = ["journal", "routing", "rules", "sources", "mine", "settings"]
 
 HA_CARD = """
 // Every animation, the ones inside shadow roots too (document.getAnimations() leaves those out).
@@ -241,10 +257,10 @@ def shoot_panel(page, tmp, tab, theme):
     page.set_content(page_html(theme, 1100))
     page.add_script_tag(content=(FRONTEND / "notify-hub-panel.js").read_text())
     page.evaluate(
-        """async ([h, data, tab]) => { h.callWS = async () => data; const p = document.createElement('notify-hub-panel'); p._tab = tab;
+        """async ([h, data, mine, tab]) => { h.callWS = async (m) => (m.type === 'notify_hub/mine' ? mine : data); const p = document.createElement('notify-hub-panel'); p._tab = tab;
              document.getElementById('root').style.padding = '0'; document.getElementById('root').append(p);
              p.hass = h; await new Promise((r) => setTimeout(r, 50)); nhAnimations().forEach((a) => { a.pause(); a.currentTime = 0; }); }""",
-        [hass(theme), PANEL_STATE, tab],
+        [hass(theme), PANEL_STATE, MINE_STATE, tab],
     )
     page.add_style_tag(content="notify-hub-panel{display:block} #root{min-height:0}")
     page.evaluate("document.querySelector('notify-hub-panel').shadowRoot.querySelector('.page').style.minHeight = '0'")

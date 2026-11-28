@@ -31,7 +31,8 @@ def _version() -> str:
 
 
 async def async_register_panel(hass: HomeAssistant) -> None:
-    """Serve the panel's module (once per run) and add the panel to the sidebar, for administrators."""
+    """Serve the panel's module (once per run) and add the panel to the sidebar, for every user (a
+    non-administrator only gets the "My notifications" tab)."""
     if "frontend" not in hass.config.components:
         return
     from homeassistant.components import frontend
@@ -58,7 +59,7 @@ async def async_register_panel(hass: HomeAssistant) -> None:
         sidebar_title=TITLE,
         sidebar_icon=PANEL_ICON,
         frontend_url_path=PANEL_URL,
-        require_admin=True,
+        require_admin=False,  # every user: the non-administrators only get the "My notifications" tab
         config={
             "_panel_custom": {
                 "name": ELEMENT,

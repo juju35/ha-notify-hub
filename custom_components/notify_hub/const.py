@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "notify_hub"
 TITLE: Final = "Notify Hub"
-VERSION: Final = "0.11.0"
+VERSION: Final = "0.12.0"
 
 # Priorities, from the most to the least urgent.
 PRIORITY_CRITICAL: Final = "critical"
@@ -26,6 +26,7 @@ STATUS_ACKNOWLEDGED: Final = "acknowledged"
 STATUS_NOBODY: Final = "nobody"  # no channel to send it to
 STATUS_FAILED: Final = "failed"
 STATUS_MUTED: Final = "muted"  # its source is muted: kept in the journal, sent to nobody
+STATUS_UNSUBSCRIBED: Final = "unsubscribed"  # everyone it was meant for turned it off in "My notifications"
 
 # Options (entry options, edited in the panel's Rules and Settings tabs or the options flow).
 CONF_QUIET_START: Final = "quiet_start"
@@ -43,6 +44,12 @@ CONF_EXCLUDED_PEOPLE: Final = "excluded_people"
 # room presence system such as ESPresence, an input_boolean, a device tracker): `on` or `home` is at home.
 CONF_PRESENCE: Final = "presence"
 CONF_RETENTION_DAYS: Final = "retention_days"
+# {person entity: {"sources": [source keys], "priorities": [priorities]}}: what each person turned off for
+# themselves in the panel's "My notifications" tab (any user, admin or not, for the person linked to their account).
+# Critical notifications are always received.
+CONF_SUBSCRIPTIONS: Final = "subscriptions"
+# The priorities a person may turn off (critical ones always come through).
+OPTIONAL_PRIORITIES: Final = ("alert", "info", "digest")
 # {source key: rule} — name, icon, color, priority, people, ignore_quiet, dedup_minutes, muted (see sources.py).
 CONF_SOURCES: Final = "sources"
 # The notifications other integrations raise in Home Assistant, sent through the hub too.
