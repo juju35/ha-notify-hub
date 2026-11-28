@@ -31,6 +31,22 @@ def generator_text() -> str:
     return "\n".join(parts)
 
 
+# A name built in a script, such as f"panel-{tab}{'-dark' if dark else ''}.png": its fixed start, then a placeholder.
+FSTRING = re.compile(r"""f["']([\w.-]+?)\{""")
+
+
+def rendered(stem: str, source: str) -> bool:
+    """Whether a script renders this capture: its name written out, or built by an f-string from a fixed start and a
+    value written as a string literal in the scripts (f"panel-{tab}" with "mine" in the list of tabs)."""
+    if stem in source:
+        return True
+    for start in set(FSTRING.findall(source)):
+        rest = stem[len(start) :] if stem.startswith(start) else ""
+        if rest and re.search(rf"""["']{re.escape(rest)}["']""", source):
+            return True
+    return False
+
+
 def main() -> int:
     files = set()
     if SHOTS.is_dir():
@@ -45,7 +61,7 @@ def main() -> int:
         source = generator_text()
         for name in sorted(missing):
             stem = re.sub(r"-(dark|light)$", "", name.rsplit(".", 1)[0])
-            if stem not in source:
+            if not rendered(stem, source):
                 errors.append(f"README.md shows screenshots/{name}: no such file, no script renders it")
     for error in errors:
         print(error, file=sys.stderr)
