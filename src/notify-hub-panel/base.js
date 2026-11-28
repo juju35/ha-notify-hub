@@ -1,17 +1,21 @@
 /**
  * notify-hub-panel — Notify Hub's sidebar panel (administrators): the journal of the notifications, the people and
  * their channels, the rules (priorities, quiet hours, duplicates, digests), the sources (each integration's rule and
- * look, the notifications captured from Home Assistant) and the settings (escalation, SMS, journal, tests). Talks to the integration over its WebSocket commands (notify_hub/state, /save, /acknowledge,
- * /test, /digest). Its layout follows the other ha-* panels: an illustrated header across the whole width, the tabs
+ * look, the notifications captured from Home Assistant), "My notifications" (the sources and priorities the user turns
+ * off for themselves — the only tab of a user who is not an administrator) and the settings (escalation, SMS, journal,
+ * tests). Talks to the integration over its WebSocket commands (notify_hub/state, /save, /acknowledge,
+ * /test, /digest, /mine, /mine/save). Its layout follows the other ha-* panels: an illustrated header across the whole width, the tabs
  * under it, the current tab in the address.
  * https://github.com/juju35/ha-notify-hub
  */
-export var NOTIFY_HUB_PANEL_VERSION = '0.11.0';
+export var NOTIFY_HUB_PANEL_VERSION = '0.12.0';
 
 
-export var NHP_TABS = ['journal', 'routing', 'rules', 'sources', 'settings'];
+export var NHP_TABS = ['journal', 'routing', 'rules', 'sources', 'mine', 'settings'];
+// A user who is not an administrator only gets their own choices.
+export var NHP_USER_TABS = ['mine'];
 export var NHP_FILTERS = ['all', 'critical', 'pending', 'grouped', 'held', 'duplicate'];
-export var NHP_TONES = { delivered: 'ok', acknowledged: 'ok', pending: 'bad', held: 'idle', grouped: 'warn', duplicate: 'info', nobody: 'bad', failed: 'bad', muted: 'idle' };
+export var NHP_TONES = { delivered: 'ok', acknowledged: 'ok', pending: 'bad', held: 'idle', grouped: 'warn', duplicate: 'info', nobody: 'bad', failed: 'bad', muted: 'idle', unsubscribed: 'idle' };
 export var NHP_ICONS = {
   bell: 'M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21',
   send: 'M2,21L23,12L2,3V10L17,12L2,14V21Z',

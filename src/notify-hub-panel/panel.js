@@ -1,5 +1,5 @@
 // ── End of the folded top bar ──
-import { NHP_FILTERS, NHP_TABS, NHP_TONES, NOTIFY_HUB_PANEL_VERSION, nhpAvatar, nhpEsc, nhpFill, nhpIcon } from "./base.js";
+import { NHP_FILTERS, NHP_TABS, NHP_TONES, NHP_USER_TABS, NOTIFY_HUB_PANEL_VERSION, nhpAvatar, nhpEsc, nhpFill, nhpIcon } from "./base.js";
 import { notifyHubPanelFold } from "./fold.js";
 import { NH_PANEL_I18N } from "./i18n/nh-panel-i18n.js";
 
@@ -8,6 +8,7 @@ export class NotifyHubPanel extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._data = null;
+    this._mineData = null;
     this._draft = {};
     this._filter = 'all';
     this._source = '';
@@ -15,8 +16,8 @@ export class NotifyHubPanel extends HTMLElement {
     this._srcEdit = null;
     this._srcDraft = {};
     this._srcNew = null;
-    var tab = new URLSearchParams(location.search).get('tab');
-    this._tab = NHP_TABS.includes(tab) ? tab : 'journal';
+    // Checked against the user's tabs once hass is known (_tabs).
+    this._tab = new URLSearchParams(location.search).get('tab') || 'journal';
     this.shadowRoot.addEventListener('click', (ev) => this._click(ev));
     this.shadowRoot.addEventListener('change', (ev) => this._change(ev));
     this.shadowRoot.addEventListener('keydown', (ev) => this._key(ev));
@@ -56,7 +57,7 @@ export class NotifyHubPanel extends HTMLElement {
     this._timer = setInterval(() => this._load(), 30000);
     this._onPop = this._onPop || (() => {
       var tab = new URLSearchParams(location.search).get('tab');
-      if (NHP_TABS.includes(tab) && tab !== this._tab) this._setTab(tab, false);
+      if (this._tabs().includes(tab) && tab !== this._tab) this._setTab(tab, false);
     });
     window.addEventListener('popstate', this._onPop);
   }
@@ -80,10 +81,21 @@ export class NotifyHubPanel extends HTMLElement {
     return Object.assign({}, NH_PANEL_I18N.en, NH_PANEL_I18N[lang]);
   }
 
+  // Administrators get every tab; the other users only their own choices.
+  _admin() {
+    return this._hass?.user?.is_admin !== false;
+  }
+
+  _tabs() {
+    return this._admin() ? NHP_TABS : NHP_USER_TABS;
+  }
+
   async _load() {
     if (!this._hass) return;
     try {
-      this._data = await this._hass.callWS({ type: 'notify_hub/state' });
+      var [state, mine] = await Promise.all([this._admin() ? this._hass.callWS({ type: 'notify_hub/state' }) : null, this._hass.callWS({ type: 'notify_hub/mine' })]);
+      this._data = state;
+      this._mineData = mine;
       this._error = '';
     } catch (err) {
       this._error = err?.message || String(err);
@@ -96,7 +108,7 @@ export class NotifyHubPanel extends HTMLElement {
   }
 
   _setTab(tab, push = true) {
-    if (!NHP_TABS.includes(tab)) return;
+    if (!this._tabs().includes(tab)) return;
     this._tab = tab;
     this._draft = {};
     this._editing = null;
@@ -116,11 +128,12 @@ export class NotifyHubPanel extends HTMLElement {
   // Tabs: the arrows, Home and End move between them (WAI-ARIA tabs pattern).
   _key(ev) {
     if (!ev.target?.classList?.contains('tab')) return;
-    var i = NHP_TABS.indexOf(this._tab);
-    var next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: NHP_TABS.length - 1 }[ev.key];
+    var tabs = this._tabs();
+    var i = tabs.indexOf(this._tab);
+    var next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[ev.key];
     if (next === undefined) return;
     ev.preventDefault();
-    this._setTab(NHP_TABS[(next + NHP_TABS.length) % NHP_TABS.length]);
+    this._setTab(tabs[(next + tabs.length) % tabs.length]);
     this.shadowRoot.querySelector('.tab.on')?.focus();
   }
 
@@ -220,6 +233,19 @@ export class NotifyHubPanel extends HTMLElement {
   _change(ev) {
     var el = ev.target;
     var key = el?.dataset?.key;
+    if (el?.dataset?.mine) {
+      // "My notifications": a ticked box is received; applied at once, for the user's own person only.
+      var mine = this._mineData?.subscription || { sources: [], priorities: [] };
+      var kind = el.dataset.mine;
+      var off = new Set(mine[kind] || []);
+      if (el.checked) off.delete(el.dataset.value);
+      else off.add(el.dataset.value);
+      var choice = { sources: mine.sources || [], priorities: mine.priorities || [], [kind]: [...off] };
+      // Kept at once: a second box changed before the reload builds on this one instead of undoing it.
+      if (this._mineData) this._mineData.subscription = choice;
+      this._ws({ type: 'notify_hub/mine/save', ...choice }, this._t().saved);
+      return;
+    }
     if (el?.dataset?.src) {
       // A field of the source being edited: kept in its draft until its Save button.
       var field = el.dataset.src;
@@ -300,6 +326,7 @@ export class NotifyHubPanel extends HTMLElement {
         routing: "mdi:call-split",
         rules: "mdi:filter-outline",
         sources: "mdi:import",
+        mine: "mdi:account-cog-outline",
         settings: "mdi:cog",
       },
       badge: ".cnt",
@@ -317,11 +344,15 @@ export class NotifyHubPanel extends HTMLElement {
     if (!this._hass) return;
     var t = this._t();
     var d = this._data;
+    var tabs = this._tabs();
+    if (!tabs.includes(this._tab)) this._tab = tabs[0];
+    var admin = this._admin();
     var counts = d?.counts || {};
     var pending = Number(counts.pending) || 0;
     var tone = pending ? 'bad' : d?.quiet ? 'idle' : 'ok';
-    var subtitle = d ? (d.quiet && d.quiet_hours ? nhpFill(t.subtitle_quiet, { t: d.quiet_hours[1] }) : nhpFill(t.subtitle_ok, { n: counts.sent_today || 0 })) : '';
-    var body = !d ? `<div class="empty">${nhpEsc(this._error || '…')}</div>` : this[`_${this._tab}`](d, t);
+    var subtitle = d ? (d.quiet && d.quiet_hours ? nhpFill(t.subtitle_quiet, { t: d.quiet_hours[1] }) : nhpFill(t.subtitle_ok, { n: counts.sent_today || 0 })) : this._mineData?.person?.name || '';
+    var ready = this._tab === 'mine' ? this._mineData : d;
+    var body = !ready ? `<div class="empty">${nhpEsc(this._error || '…')}</div>` : this._tab === 'mine' ? this._mine(this._mineData, t) : this[`_${this._tab}`](d, t);
     var dark = !!this._hass.themes?.darkMode;
     var bare = (d?.options?.hide_header || 'off') !== 'off';
     if (!this._built) {
@@ -344,12 +375,12 @@ export class NotifyHubPanel extends HTMLElement {
       <span class="htxt"><span class="title">Notify Hub</span><span class="subtitle">${nhpEsc(subtitle)}</span></span>
       ${pending ? `<span class="pill" title="${nhpEsc(t.c_pending)}">${nhpEsc(pending)}<span class="pl"> · ${nhpEsc(t.c_pending)}</span></span>` : ''}`,
     );
-    var buttons = `<button class="round" type="button" data-act="test" data-priority="info" title="${nhpEsc(t.test_info)}" aria-label="${nhpEsc(t.test_info)}">${nhpIcon('send')}</button>
+    var buttons = !admin ? '' : `<button class="round" type="button" data-act="test" data-priority="info" title="${nhpEsc(t.test_info)}" aria-label="${nhpEsc(t.test_info)}">${nhpIcon('send')}</button>
       <button class="round" type="button" data-act="digest" title="${nhpEsc(t.digest_now)}" aria-label="${nhpEsc(t.digest_now)}">${nhpIcon('tray')}</button>`;
     // The top bar hidden (option): the menu button and the round buttons move to the row of the tabs.
     this._set('.top .btns', bare ? '' : buttons);
     this._set('.tabbar .btns', bare ? buttons : '');
-    this._set('.tabs', NHP_TABS.map((tab) => `<button type="button" role="tab" class="tab${tab === this._tab ? ' on' : ''}" aria-selected="${tab === this._tab}" tabindex="${tab === this._tab ? 0 : -1}" data-act="tab" data-tab="${tab}">${nhpEsc(t[`tab_${tab}`])}</button>`).join(''));
+    this._set('.tabs', tabs.map((tab) => `<button type="button" role="tab" class="tab${tab === this._tab ? ' on' : ''}" aria-selected="${tab === this._tab}" tabindex="${tab === this._tab ? 0 : -1}" data-act="tab" data-tab="${tab}">${nhpEsc(t[`tab_${tab}`])}</button>`).join(''));
     var active = this.shadowRoot.activeElement;
     var editing = Object.keys(this._draft).length > 0 || (active && /^(INPUT|SELECT|TEXTAREA)$/.test(active.tagName) && active.closest('.wrap'));
     var form = this._tab === 'rules' || this._tab === 'settings' || (this._tab === 'sources' && this._srcEdit);
@@ -418,7 +449,7 @@ export class NotifyHubPanel extends HTMLElement {
       ? rows
           .map((e) => {
             var tone = NHP_TONES[e.status] || 'ok';
-            var status = { pending: t.f_pending, grouped: t.f_grouped, held: t.f_held, duplicate: t.f_duplicate, nobody: t.st_nobody, failed: t.st_failed, muted: t.st_muted }[e.status];
+            var status = { pending: t.f_pending, grouped: t.f_grouped, held: t.f_held, duplicate: t.f_duplicate, nobody: t.st_nobody, failed: t.st_failed, muted: t.st_muted, unsubscribed: t.st_unsubscribed }[e.status];
             var look = looks[e.source_key] || { name: e.source, domain: e.domain };
             var source = e.source_key
               ? `<button type="button" class="cell srcbtn" data-act="source" data-key="${nhpEsc(e.source_key)}" title="${nhpEsc(e.origin || e.source)}">${nhpAvatar(look, dark, 'av sm')}<span>${nhpEsc(e.source)}</span></button>`
@@ -453,6 +484,8 @@ export class NotifyHubPanel extends HTMLElement {
             var dedicated = own.length
               ? `<div class="chips"><span class="muted">${nhpEsc(t.p_sources)}</span>${own.map((x) => `<span class="chip static">${nhpAvatar({ domain: x.domain, icon: x.rule.icon, color: x.rule.color }, !!this._hass.themes?.darkMode, 'av sm')}${nhpEsc(x.name)}</span>`).join('')}</div>`
               : '';
+            var choices = [...(p.subscription?.priorities || []).map((x) => t[`pn_${x}`] || x), ...(p.subscription?.sources || []).map((k) => (d.sources || []).find((x) => x.key === k)?.name || k)];
+            var turnedOff = choices.length ? `<div class="chips"><span class="muted">${nhpEsc(t.p_turned_off)}</span>${choices.map((x) => `<span class="chip static">${nhpEsc(x)}</span>`).join('')}</div>` : '';
             var channels = p.channels.length ? p.channels.map((c) => `<span class="chip static">${nhpEsc(this._channel(c))}</span>`).join('') : `<span class="muted">${nhpEsc(t.no_channel)}</span>`;
             var id = nhpEsc(p.entity_id);
             var exclude = `<label class="check"><input type="checkbox" data-exclude="${id}"${p.excluded ? ' checked' : ''}><span>${nhpEsc(t.p_exclude)}</span></label>`;
@@ -472,7 +505,7 @@ export class NotifyHubPanel extends HTMLElement {
               <div class="phead"><span class="dot">${nhpIcon('person')}</span>
                 <span class="txt"><span class="nm">${nhpEsc(p.name)}</span><span class="sub">${nhpEsc(sub)}</span></span>
                 <button type="button" class="btn" data-act="edit" data-person="${id}" aria-expanded="${editing}">${nhpEsc(t.channels)}</button></div>
-              ${p.excluded ? '' : `<div class="chips">${channels}</div>${dedicated}`}${picker}
+              ${p.excluded ? '' : `<div class="chips">${channels}</div>${dedicated}${turnedOff}`}${picker}
             </div>`;
           })
           .join('')
@@ -481,6 +514,24 @@ export class NotifyHubPanel extends HTMLElement {
       <section class="col"><h2>${nhpEsc(t.escalation)}</h2><div class="card"><p class="text">${nhpEsc(nhpFill(t.escalation_text, { a: esc[0], b: esc[1] }))}</p>
       <div class="chips"><span class="chip static">${nhpEsc(t.p_alert.split(' (')[0])}</span><span class="muted">→ ${esc[0]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(t.f_all)}</span><span class="muted">→ ${esc[1]} ${nhpEsc(t.minutes)} →</span><span class="chip static">${nhpEsc(opts.sms_service ? this._channel(opts.sms_service) : t.sms_none)}</span></div>
       <div class="actions"><button type="button" class="btn danger" data-act="test" data-priority="critical">${nhpEsc(t.test_critical)}</button></div></div></section></div>`;
+  }
+
+  // "My notifications": what the person linked to the user receives — every box ticked by default; a critical
+  // notification always comes through.
+  _mine(m, t) {
+    if (!m.person) return `<div class="empty">${nhpEsc(t.mine_no_person)}</div>`;
+    var off = m.subscription || { sources: [], priorities: [] };
+    var dark = !!this._hass.themes?.darkMode;
+    var box = (field, value, label, extra) =>
+      `<label class="check"><input type="checkbox" data-mine="${field}" data-value="${nhpEsc(value)}"${(off[field] || []).includes(value) ? '' : ' checked'}>${extra || ''}<span>${nhpEsc(label)}</span></label>`;
+    var levels = `<label class="check"><input type="checkbox" checked disabled><span>${nhpEsc(t.mine_critical)}</span></label>${(m.priorities || []).map((p) => box('priorities', p, t[`pn_${p}`] || p)).join('')}`;
+    var sources = (m.sources || []).length
+      ? m.sources.map((x) => box('sources', x.key, x.name, nhpAvatar(x, dark, 'av sm'))).join('')
+      : `<span class="muted">${nhpEsc(t.src_empty)}</span>`;
+    var excluded = m.person.excluded ? `<p class="muted wrapline">${nhpEsc(t.mine_excluded)}</p>` : '';
+    return `<div class="cols"><section class="col"><h2>${nhpEsc(t.mine_priorities)}</h2><div class="card"><div class="picker col1 bare">${levels}</div>
+        <p class="muted wrapline">${nhpEsc(nhpFill(t.mine_help, { name: m.person.name }))}</p>${excluded}</div></section>
+      <section class="col"><h2>${nhpEsc(t.mine_sources)}</h2><div class="card"><div class="picker bare">${sources}</div></div></section></div>`;
   }
 
   _entityName(id) {
@@ -722,6 +773,7 @@ export class NotifyHubPanel extends HTMLElement {
       .phead { display: flex; align-items: center; gap: 10px; }
       .p-home { --c: var(--ok); } .p-away, .p-excluded { --c: var(--idle); }
       .p-excluded .phead .dot, .p-excluded .phead .txt { opacity: .55; }
+      .picker.bare { border-top: 0; padding-top: 0; }
       .picker.col1 { flex-direction: column; align-items: stretch; gap: 10px; }
       .picker { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 6px; border-top: 1px solid var(--divider-color, rgba(127,127,127,.15)); }
       .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }

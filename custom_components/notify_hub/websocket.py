@@ -1,4 +1,5 @@
-"""WebSocket commands of the panel: its state, acknowledge, send a test or the digest now, save the options."""
+"""WebSocket commands of the panel: its state, acknowledge, send a test or the digest now, save the options (for the
+administrators), and "My notifications" (for every user: what the person linked to their account receives)."""
 
 from __future__ import annotations
 
@@ -30,9 +31,11 @@ from .const import (
     CONF_RETENTION_DAYS,
     CONF_SMS_SERVICE,
     CONF_SOURCES,
+    CONF_SUBSCRIPTIONS,
     DOMAIN,
     HIDE_HEADER_MODES,
     MAX_JOURNAL,
+    OPTIONAL_PRIORITIES,
     PRIORITIES,
     PRIORITY_INFO,
     VERSION,
@@ -77,7 +80,7 @@ def _hub(hass: HomeAssistant) -> NotifyHub | None:
 
 @callback
 def async_register_websocket(hass: HomeAssistant) -> None:
-    for command in (ws_state, ws_acknowledge, ws_test, ws_digest, ws_save):
+    for command in (ws_state, ws_acknowledge, ws_test, ws_digest, ws_save, ws_mine, ws_mine_save):
         websocket_api.async_register_command(hass, command)
 
 
@@ -193,3 +196,69 @@ def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
         options.pop(CONF_SMS_SERVICE, None)
     hass.config_entries.async_update_entry(hub.entry, options=options)
     connection.send_result(msg["id"], {"options": options})
+
+
+# The most sources a person can turn off (far more than a home has; keeps a user from bloating the options).
+MAX_TURNED_OFF = 200
+
+
+def _mine(hub: NotifyHub, person: dict[str, Any] | None) -> dict[str, Any]:
+    """What the "My notifications" tab shows: the user's person (None when no person is linked to their account),
+    the sources they can turn off (name and look only), the priorities they can turn off, and their choices."""
+    return {
+        "person": {k: person[k] for k in ("entity_id", "name", "picture", "excluded")} if person else None,
+        "sources": [
+            {
+                "key": src["key"],
+                "name": src["name"],
+                "domain": src.get("domain"),
+                "icon": (src.get("rule") or {}).get("icon"),
+                "color": (src.get("rule") or {}).get("color"),
+            }
+            for src in hub.sources()
+        ],
+        "priorities": list(OPTIONAL_PRIORITIES),
+        "subscription": person["subscription"] if person else {"sources": [], "priorities": []},
+    }
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/mine"})
+@callback
+def ws_mine(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Any user: the notifications the person linked to their account receives."""
+    hub = _hub(hass)
+    if hub is None:
+        _not_loaded(connection, msg)
+        return
+    connection.send_result(msg["id"], _mine(hub, hub.person_of_user(connection.user.id)))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/mine/save",
+        vol.Required("sources"): vol.All([vol.All(str, vol.Length(max=255))], vol.Length(max=MAX_TURNED_OFF)),
+        vol.Required("priorities"): [vol.In(OPTIONAL_PRIORITIES)],
+    }
+)
+@callback
+def ws_mine_save(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Any user: save what the person linked to their account turned off — only theirs, never another person's."""
+    hub = _hub(hass)
+    if hub is None:
+        _not_loaded(connection, msg)
+        return
+    person = hub.person_of_user(connection.user.id)
+    if person is None:
+        connection.send_error(msg["id"], "no_person", "No person is linked to this user")
+        return
+    choice = {"sources": sorted(set(msg["sources"])), "priorities": sorted(set(msg["priorities"]))}
+    subscriptions = dict(hub.entry.options.get(CONF_SUBSCRIPTIONS) or {})
+    if choice["sources"] or choice["priorities"]:
+        subscriptions[person["entity_id"]] = choice
+    else:
+        subscriptions.pop(person["entity_id"], None)
+    options = {**hub.entry.options, CONF_SUBSCRIPTIONS: subscriptions}
+    if not subscriptions:
+        options.pop(CONF_SUBSCRIPTIONS)
+    hass.config_entries.async_update_entry(hub.entry, options=options)
+    connection.send_result(msg["id"], _mine(hub, hub.person_of_user(connection.user.id)))

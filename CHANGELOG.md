@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0 - 2026-11-28
+
+### Features
+
+- **My notifications**: a new panel tab where every user, administrator or not, picks the priorities (alert, info, digest) and the sources the person linked to their account receives; critical notifications always come through. The panel is now open to every user — a non-administrator only gets this tab, the other tabs and their commands stay reserved to administrators.
+- When everyone at home turned a notification off, it goes on as when nobody is home (the people away who want it, or the digest); a notification nobody wants is kept in the journal as *unsubscribed*; each person's digest only lists what they still want. The Routing tab shows what each person turned off.
+
 ## 0.11.0 - 2026-11-27
 
 ### Features

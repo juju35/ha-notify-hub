@@ -181,6 +181,12 @@ A held notification is sent only if it is still there when its wait ends: a repa
 
 A shared `topic` correlates notifications of different sources: the next ones on that topic within the duplicate delay (`dedup_minutes`) are kept in the journal as duplicates of the first.
 
+### My notifications
+
+Every user — not only the administrators — opens the **Notify Hub** panel to choose what the person linked to their account (*Settings → People*) receives: untick a priority (alert, info, digest) or a source to stop getting it. Critical notifications always come through. A user who is not an administrator only sees this tab; the other tabs and their commands stay reserved to the administrators, and each user can only change their own choices.
+
+The choices apply after the routing above: when everyone at home turned a notification off, it goes on as when nobody is home (the people away who want it, or the digest); a notification nobody wants is kept in the journal as *unsubscribed*, and each person's digest only lists what they still want. The **Routing** tab shows what each person turned off.
+
 ### Entities
 
 One device, **Notify Hub**, with the `notify.notify_hub` entity and five sensors (named in Home Assistant's language):
@@ -226,6 +232,7 @@ Every option is in the visual editor.
 | Routing | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-routing.png" alt="Routing" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-routing-dark.png" alt="Routing, dark" width="400"> |
 | Rules | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-rules.png" alt="Rules" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-rules-dark.png" alt="Rules, dark" width="400"> |
 | Sources | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-sources.png" alt="Sources" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-sources-dark.png" alt="Sources, dark" width="400"> |
+| My notifications | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-mine.png" alt="My notifications" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-mine-dark.png" alt="My notifications, dark" width="400"> |
 | Settings | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-settings.png" alt="Settings" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-notify-hub/main/screenshots/panel-settings-dark.png" alt="Settings, dark" width="400"> |
 
 ## How it works
