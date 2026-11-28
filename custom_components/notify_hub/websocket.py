@@ -198,6 +198,10 @@ def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
     connection.send_result(msg["id"], {"options": options})
 
 
+# The most sources a person can turn off (far more than a home has; keeps a user from bloating the options).
+MAX_TURNED_OFF = 200
+
+
 def _mine(hub: NotifyHub, person: dict[str, Any] | None) -> dict[str, Any]:
     """What the "My notifications" tab shows: the user's person (None when no person is linked to their account),
     the sources they can turn off (name and look only), the priorities they can turn off, and their choices."""
@@ -232,7 +236,7 @@ def ws_mine(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
 @websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/mine/save",
-        vol.Required("sources"): [str],
+        vol.Required("sources"): vol.All([vol.All(str, vol.Length(max=255))], vol.Length(max=MAX_TURNED_OFF)),
         vol.Required("priorities"): [vol.In(OPTIONAL_PRIORITIES)],
     }
 )

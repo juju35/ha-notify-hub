@@ -185,7 +185,7 @@ A shared `topic` correlates notifications of different sources: the next ones on
 
 Every user — not only the administrators — opens the **Notify Hub** panel to choose what the person linked to their account (*Settings → People*) receives: untick a priority (alert, info, digest) or a source to stop getting it. Critical notifications always come through. A user who is not an administrator only sees this tab; the other tabs and their commands stay reserved to the administrators, and each user can only change their own choices.
 
-The choices apply after the routing above: a notification everyone it was meant for turned off is kept in the journal as *unsubscribed*, and each person's digest only lists what they still want. The **Routing** tab shows what each person turned off.
+The choices apply after the routing above: when everyone at home turned a notification off, it goes on as when nobody is home (the people away who want it, or the digest); a notification nobody wants is kept in the journal as *unsubscribed*, and each person's digest only lists what they still want. The **Routing** tab shows what each person turned off.
 
 ### Entities
 

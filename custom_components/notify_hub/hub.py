@@ -16,7 +16,8 @@ Each notification is filed under its source (an integration, found by itself, se
 priority, people, duplicate delay, quiet hours ignored, muted (its critical ones still sent) — apply before the above;
 its icon and color go to the phones (Android) and to the panel and the card.
 Last, each person's own choices (`subscriptions`, set by them in the panel's "My notifications" tab): the sources and
-priorities they turned off are not sent to them — never a critical one. A notification everyone it was meant for
+priorities they turned off are not sent to them — never a critical one. When everyone at home turned it off, it goes
+on as when nobody is home (the people away who want it, or the digest); a notification everyone it was meant for
 turned off is "unsubscribed"; a digest only lists, for each person, the notifications they still want.
 Everything is kept in a journal (.storage), newest first, for the panel, the card and the sensors.
 """
@@ -416,8 +417,15 @@ class NotifyHub:
         return False
 
     async def _send_normal(self, entry: dict[str, Any], people: list[str] | None) -> None:
-        """An alert or an info: the people at home (or the ones named); with nobody home, see the module doc."""
+        """An alert or an info: the people at home who want it (or the ones named); with nobody home — or nobody at
+        home who wants it — see the module doc."""
         targets = self._targets(people, present_only=True)
+        if not people:
+            everyone = self._targets(None, present_only=False)
+            if everyone and not any(self.wants(p, entry) for p in everyone):
+                entry["status"] = STATUS_UNSUBSCRIBED
+                return
+            targets = [p for p in targets if self.wants(p, entry)]
         if not targets and not people:
             if entry["priority"] == PRIORITY_INFO and not self.options.get(CONF_AWAY_MODE, False):
                 entry["status"] = STATUS_GROUPED

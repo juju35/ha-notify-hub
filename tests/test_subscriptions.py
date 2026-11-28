@@ -118,3 +118,21 @@ async def test_digest_kept_for_whom_it_failed(hass: HomeAssistant, sent) -> None
     assert await hub_entry.runtime_data.async_send_digest() == 1
     journal = {e["message"]: e for e in hub_entry.runtime_data.journal}
     assert journal["Parcel"]["status"] == "delivered" and journal["Rain"]["status"] == "grouped"
+
+
+async def test_home_turned_it_off_goes_on_as_nobody_home(hass: HomeAssistant, sent) -> None:
+    """Anne, alone at home, turned infos off: as when nobody is home, the info waits for the digest; an alert goes to
+    Ben, away."""
+    people(hass)
+    await setup_hub(hass, **{CONF_SUBSCRIPTIONS: {"person.anne": {"sources": [], "priorities": ["info", "alert"]}}})
+    assert (await send(hass, message="Dishwasher done", priority="info"))["status"] == "grouped"
+    result = await send(hass, message="Window open", priority="alert")
+    assert result["people"] == ["Ben"] and not to(sent, ANNE)
+
+
+async def test_too_many_sources(hass: HomeAssistant, hass_ws_client, hass_admin_user, sent) -> None:
+    hass.states.async_set("person.anne", "home", {"friendly_name": "Anne", "user_id": hass_admin_user.id})
+    await setup_hub(hass)
+    client = await hass_ws_client(hass)
+    refused = await _ws(client, type=f"{DOMAIN}/mine/save", sources=[f"s{n}" for n in range(201)], priorities=[])
+    assert not refused["success"]
